@@ -91,6 +91,9 @@
             padding-bottom: 0.4rem;
             font-size: 0.95rem;
         }
+        table.min-w-full th, table.min-w-full td {
+            border-bottom: 1px solid #e5e7eb;
+        }
     </style>
 </head>
 
@@ -136,6 +139,7 @@
 
         let currentCategoryFilter = '';
         let compactMode = true;
+        let veryCompactMode = false;
 
         // DOM Elements
         let deviceContainer, searchInput, reservationModal, initialsInput,
@@ -146,8 +150,9 @@
             confirmAddDeviceButton, cancelAddDeviceButton,
             editDeviceModal, editDeviceNameInput, editDeviceCategoryInput, editDeviceIMEIInput,
             editDeviceNotesInput, editDeviceIndexInput, confirmEditDeviceButton, cancelEditDeviceButton, editDeviceIdInput,
-            sortCategorySelect, compactToggleButton,
-            manageTeamButton, addTeamMemberModal, newTeamMemberUidInput, confirmAddTeamMemberButton, cancelAddTeamMemberButton;
+            sortCategorySelect, compactToggleButton, veryCompactToggleButton,
+            manageTeamButton, addTeamMemberModal, newTeamMemberUidInput, confirmAddTeamMemberButton, cancelAddTeamMemberButton,
+            bulkAddDevicesButton, bulkAddDevicesModal, bulkDevicesTextarea, confirmBulkAddDevicesButton, cancelBulkAddDevicesButton;
 
         function initializeDOMElements() {
             deviceContainer = document.getElementById('deviceContainer');
@@ -185,6 +190,7 @@
 
             sortCategorySelect = document.getElementById('sortCategorySelect');
             compactToggleButton = document.getElementById('compactToggleButton');
+            veryCompactToggleButton = document.getElementById('veryCompactToggleButton');
 
             // Team Management Elements
             manageTeamButton = document.getElementById('manageTeamButton');
@@ -192,6 +198,13 @@
             newTeamMemberUidInput = document.getElementById('newTeamMemberUid');
             confirmAddTeamMemberButton = document.getElementById('confirmAddTeamMemberButton');
             cancelAddTeamMemberButton = document.getElementById('cancelAddTeamMemberButton');
+
+            // Bulk Add Devices Elements
+            bulkAddDevicesButton = document.getElementById('bulkAddDevicesButton');
+            bulkAddDevicesModal = document.getElementById('bulkAddDevicesModal');
+            bulkDevicesTextarea = document.getElementById('bulkDevicesTextarea');
+            confirmBulkAddDevicesButton = document.getElementById('confirmBulkAddDevicesButton');
+            cancelBulkAddDevicesButton = document.getElementById('cancelBulkAddDevicesButton');
         }
 
         async function checkTeamMembership(userId) {
@@ -219,6 +232,12 @@
             }
             if (manageTeamButton) {
                 manageTeamButton.style.display = isTeamMember ? 'inline-block' : 'none';
+            }
+            if (bulkAddDevicesButton) {
+                bulkAddDevicesButton.style.display = isTeamMember ? 'block' : 'none';
+            }
+            if (veryCompactToggleButton) {
+                veryCompactToggleButton.style.display = isTeamMember ? 'inline-block' : 'inline-block';
             }
             filterAndRenderDevices();
         }
@@ -264,6 +283,56 @@
             deviceContainer.innerHTML = '';
             if (devicesToRender.length === 0) {
                 deviceContainer.innerHTML = `<p class="text-neutral-500 col-span-full text-center py-8">No devices found.</p>`;
+                return;
+            }
+
+            if (veryCompactMode) {
+                // Render as a table
+                let table = document.createElement('table');
+                table.className = "min-w-full text-xs border border-neutral-200 bg-white rounded-xl overflow-hidden";
+                let thead = document.createElement('thead');
+                thead.innerHTML = `<tr class="bg-neutral-100">
+                    <th class="px-2 py-1 text-left">#</th>
+                    <th class="px-2 py-1 text-left">Name</th>
+                    <th class="px-2 py-1 text-left">Category</th>
+                    <th class="px-2 py-1 text-left">IMEI</th>
+                    <th class="px-2 py-1 text-left">Notes</th>
+                    <th class="px-2 py-1 text-left">Status</th>
+                    <th class="px-2 py-1 text-left">Actions</th>
+                </tr>`;
+                table.appendChild(thead);
+                let tbody = document.createElement('tbody');
+                devicesToRender.forEach(device => {
+                    let status = device.reservedByInitials
+                        ? `<span class="text-red-600 font-semibold">Reserved: ${device.reservedByInitials}</span>`
+                        : `<span class="text-green-600 font-semibold">Available</span>`;
+                    let actions = generateButtonHtml(device);
+                    if (isTeamMember) {
+                        actions += `<button data-device-id="${device.id}" class="edit-btn bg-neutral-400 hover:bg-neutral-600 text-white font-semibold px-2 py-1 rounded-lg text-xs ml-1">Edit</button>`;
+                        actions += `<button data-device-id="${device.id}" class="remove-btn bg-red-500 hover:bg-red-700 text-white font-semibold px-2 py-1 rounded-lg text-xs ml-1">Remove</button>`;
+                    }
+                    let tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="px-2 py-1">${device.index !== undefined ? device.index : ''}</td>
+                        <td class="px-2 py-1">${device.name || ''}</td>
+                        <td class="px-2 py-1">${device.category || ''}</td>
+                        <td class="px-2 py-1">${device.imei || ''}</td>
+                        <td class="px-2 py-1">${device.notes || ''}</td>
+                        <td class="px-2 py-1">${status}</td>
+                        <td class="px-2 py-1">${actions}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                table.appendChild(tbody);
+                deviceContainer.appendChild(table);
+
+                // Attach actions
+                document.querySelectorAll('.reserve-btn').forEach(button => button.addEventListener('click', (e) => { e.stopPropagation(); openReservationModal(button.dataset.deviceId); }));
+                document.querySelectorAll('.release-btn').forEach(button => button.addEventListener('click', (e) => { e.stopPropagation(); releaseDevice(button.dataset.deviceId); }));
+                if (isTeamMember) {
+                    document.querySelectorAll('.remove-btn').forEach(button => button.addEventListener('click', (e) => { e.stopPropagation(); removeDevice(button.dataset.deviceId); }));
+                    document.querySelectorAll('.edit-btn').forEach(button => button.addEventListener('click', (e) => { e.stopPropagation(); openEditDeviceModal(button.dataset.deviceId); }));
+                }
                 return;
             }
 
@@ -365,12 +434,19 @@
         function filterAndRenderDevices() {
             if (!searchInput || !deviceContainer) return;
             const searchTerm = searchInput.value.toLowerCase();
-            let filteredDevices = allDevices.filter(device =>
-                (device.name?.toLowerCase().includes(searchTerm) ||
-                 device.category?.toLowerCase().includes(searchTerm) ||
-                 device.imei?.toLowerCase().includes(searchTerm) ||
-                 device.notes?.toLowerCase().includes(searchTerm))
-            );
+            let filteredDevices = allDevices.filter(device => {
+                // Support #number search for index
+                if (searchTerm.startsWith('#')) {
+                    const idx = searchTerm.slice(1).trim();
+                    return device.index !== undefined && String(device.index).includes(idx);
+                }
+                return (
+                    (device.name?.toLowerCase().includes(searchTerm) ||
+                    device.category?.toLowerCase().includes(searchTerm) ||
+                    device.imei?.toLowerCase().includes(searchTerm) ||
+                    device.notes?.toLowerCase().includes(searchTerm))
+                );
+            });
             if (currentCategoryFilter) {
                 filteredDevices = filteredDevices.filter(d => (d.category || 'Uncategorized') === currentCategoryFilter);
             }
@@ -380,6 +456,12 @@
         function toggleCompactMode() {
             compactMode = !compactMode;
             if (compactToggleButton) compactToggleButton.textContent = compactMode ? "Expand Actions" : "Compact View";
+            filterAndRenderDevices();
+        }
+
+        function toggleVeryCompactMode() {
+            veryCompactMode = !veryCompactMode;
+            if (veryCompactToggleButton) veryCompactToggleButton.textContent = veryCompactMode ? "Normal View" : "List View";
             filterAndRenderDevices();
         }
 
@@ -570,6 +652,41 @@
             }
         }
 
+        // --- Bulk Add Devices Logic (Team Members Only) ---
+        function openBulkAddDevicesModal() {
+            if (!isTeamMember) { showMessage("Permission denied.", true); return; }
+            if (bulkDevicesTextarea) bulkDevicesTextarea.value = '';
+            if (bulkAddDevicesModal) bulkAddDevicesModal.classList.add('active');
+            if (bulkDevicesTextarea) bulkDevicesTextarea.focus();
+        }
+        function closeBulkAddDevicesModal() { if (bulkAddDevicesModal) bulkAddDevicesModal.classList.remove('active'); }
+
+        async function confirmBulkAddDevices() {
+            if (!isTeamMember) { showMessage("Permission denied.", true, true); closeBulkAddDevicesModal(); return; }
+            const text = bulkDevicesTextarea.value.trim();
+            if (!text) { showMessage("Paste device data first.", true, true); return; }
+            // Accept CSV or line-based: name,category,imei,index,notes
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+            if (lines.length === 0) { showMessage("No valid lines found.", true, true); return; }
+            let added = 0, failed = 0;
+            confirmBulkAddDevicesButton.disabled = true; confirmBulkAddDevicesButton.textContent = 'Adding...';
+            for (const line of lines) {
+                let [name, category, imei, index, notes] = line.split(',');
+                name = name?.trim(); category = category?.trim(); imei = imei?.trim(); index = index?.trim(); notes = notes?.trim();
+                if (!name || name.length < 3 || !category || !index || isNaN(Number(index))) { failed++; continue; }
+                try {
+                    await addDoc(devicesCol, {
+                        name, category, imei: imei || 'N/A', notes: notes || '', index: Number(index),
+                        reservedByInitials: null, reservedByUserId: null, reservationDate: null,
+                        addedByUserId: currentUserId, addedDate: Timestamp.now()
+                    });
+                    added++;
+                } catch (e) { failed++; }
+            }
+            showMessage(`Bulk add complete. Added: ${added}, Failed: ${failed}`, failed > 0, true);
+            closeBulkAddDevicesModal();
+            confirmBulkAddDevicesButton.disabled = false; confirmBulkAddDevicesButton.textContent = 'Add Devices';
+        }
 
         // --- Message & Confirmation Modals ---
         function showMessage(message, isError = false, inModal = false) {
@@ -609,6 +726,7 @@
             if (searchInput) searchInput.addEventListener('input', filterAndRenderDevices);
             if (sortCategorySelect) sortCategorySelect.addEventListener('change', (e) => { currentCategoryFilter = e.target.value; filterAndRenderDevices(); });
             if (compactToggleButton) compactToggleButton.addEventListener('click', toggleCompactMode);
+            if (veryCompactToggleButton) veryCompactToggleButton.addEventListener('click', toggleVeryCompactMode);
             if (confirmReservationButton) confirmReservationButton.addEventListener('click', confirmReservation);
             if (cancelReservationButton) cancelReservationButton.addEventListener('click', closeReservationModal);
             if (addDeviceButton) addDeviceButton.addEventListener('click', openAddDeviceModal);
@@ -622,6 +740,11 @@
             if (manageTeamButton) manageTeamButton.addEventListener('click', openAddTeamMemberModal);
             if (confirmAddTeamMemberButton) confirmAddTeamMemberButton.addEventListener('click', confirmAddTeamMember);
             if (cancelAddTeamMemberButton) cancelAddTeamMemberButton.addEventListener('click', closeAddTeamMemberModal);
+
+            // Bulk Add Devices Listeners
+            if (bulkAddDevicesButton) bulkAddDevicesButton.addEventListener('click', openBulkAddDevicesModal);
+            if (confirmBulkAddDevicesButton) confirmBulkAddDevicesButton.addEventListener('click', confirmBulkAddDevices);
+            if (cancelBulkAddDevicesButton) cancelBulkAddDevicesButton.addEventListener('click', closeBulkAddDevicesModal);
 
             if (Object.keys(firebaseConfig).length > 0) {
                 initializeAuth().then(() => { if (auth.currentUser) fetchAndRenderDevices(); });
@@ -649,6 +772,9 @@
                 <button id="compactToggleButton" class="bg-neutral-200 hover:bg-neutral-300 text-neutral-700 font-semibold py-2 px-4 rounded-lg transition">
                     Expand Actions
                 </button>
+                <button id="veryCompactToggleButton" class="bg-neutral-200 hover:bg-neutral-300 text-neutral-700 font-semibold py-2 px-4 rounded-lg transition ml-2">
+                    List View
+                </button>
                 <button id="manageTeamButton" style="display: none;" class="bg-accent hover:bg-yellow-500 text-white font-semibold py-2 px-4 rounded-lg transition">
                     Manage Team
                 </button>
@@ -660,6 +786,9 @@
                 class="flex-grow p-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow">
             <button id="addDeviceButton" style="display: none;" class="w-full md:w-auto bg-secondary hover:bg-emerald-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-150 ease-in-out shadow-md">
                 + Add New Device
+            </button>
+            <button id="bulkAddDevicesButton" style="display: none;" class="w-full md:w-auto bg-secondary hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-150 ease-in-out shadow-md ml-2">
+                Bulk Add Devices
             </button>
         </div>
 
@@ -742,6 +871,23 @@
         </div>
     </div>
 
+    <div id="bulkAddDevicesModal" class="modal fixed inset-0 bg-gray-800 bg-opacity-75 items-center justify-center p-4 z-50">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg transform transition-all">
+            <h2 class="text-2xl font-semibold text-secondary mb-6">Bulk Add Devices</h2>
+            <div class="mb-4">
+                <label for="bulkDevicesTextarea" class="block text-sm font-medium text-neutral-700 mb-1">
+                    Paste devices (CSV: name,category,imei,index,notes; one per line):
+                </label>
+                <textarea id="bulkDevicesTextarea" rows="8" class="w-full p-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent" placeholder="e.g.&#10;FMC920,FMx9 Devices,123456789012345,1,Test device"></textarea>
+            </div>
+            <div class="modal-message-area text-sm mb-3 text-center"></div>
+            <div class="flex justify-end space-x-4">
+                <button id="cancelBulkAddDevicesButton" class="px-6 py-2 text-neutral-700 bg-neutral-200 hover:bg-neutral-300 rounded-lg font-medium transition">Cancel</button>
+                <button id="confirmBulkAddDevicesButton" class="px-6 py-2 bg-secondary hover:bg-emerald-700 text-white rounded-lg font-semibold transition">Add Devices</button>
+            </div>
+        </div>
+    </div>
+
     <div id="messageModal" class="modal fixed inset-0 bg-gray-800 bg-opacity-75 items-center justify-center p-4 z-50">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-center transform transition-all">
             <p id="messageText" class="text-lg mb-6">Message goes here.</p>
@@ -757,11 +903,6 @@
                 <button id="cancelActionButton" class="px-6 py-2 text-neutral-700 bg-neutral-200 hover:bg-neutral-300 rounded-lg font-medium transition">Cancel</button>
                 <button id="confirmActionButton" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition">Confirm</button>
             </div>
-        </div>
-    </div>
-
-</body>
-</html>
         </div>
     </div>
 
