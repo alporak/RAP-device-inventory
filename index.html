@@ -458,16 +458,11 @@
         }
 
         async function releaseDevice(deviceId) {
+            if (!isTeamMember) { showMessage("Only team members can release devices.", true); return; }
             if (!deviceId || !currentUserId) { showMessage("Error: Missing ID or user.", true); return; }
             try {
                 const deviceRef = doc(db, devicesCollectionPath, deviceId);
-                const deviceToRelease = allDevices.find(d => d.id === deviceId);
-                if (deviceToRelease && deviceToRelease.reservedByUserId !== currentUserId) {
-                    // Firestore rules should be the primary enforcer for who can release.
-                    // Client-side check for UX.
-                    showMessage("You can only release devices you reserved.", true);
-                    return;
-                }
+                // Any team member can release, no need to check who reserved
                 await updateDoc(deviceRef, { reservedByInitials: null, reservedByUserId: null, reservationDate: null });
                 showMessage("Device released successfully!");
             } catch (error) {
@@ -762,6 +757,11 @@
                 <button id="cancelActionButton" class="px-6 py-2 text-neutral-700 bg-neutral-200 hover:bg-neutral-300 rounded-lg font-medium transition">Cancel</button>
                 <button id="confirmActionButton" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition">Confirm</button>
             </div>
+        </div>
+    </div>
+
+</body>
+</html>
         </div>
     </div>
 
