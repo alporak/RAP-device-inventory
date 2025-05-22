@@ -23,6 +23,7 @@
                             200: '#E5E7EB', // Gray-200
                             700: '#374151', // Gray-700
                             800: '#1F2937', // Gray-800
+                            900: '#111827', // Gray-900
                         }
                     }
                 }
@@ -32,18 +33,15 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #F9FAFB;
-            /* Gray-50 */
+            background-color: #F9FAFB; /* Gray-50 */
         }
 
         .modal {
-            display: none;
-            /* Hidden by default */
+            display: none; /* Hidden by default */
         }
 
         .modal.active {
-            display: flex;
-            /* Show when active - Tailwind flex utilities will then apply */
+            display: flex; /* Show when active - Tailwind flex utilities will then apply */
         }
 
         /* Custom scrollbar for better aesthetics */
@@ -73,28 +71,21 @@
             transform: translateY(-5px);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
-
         .device-card.compact {
             padding: 0.75rem 1rem;
             font-size: 0.95rem;
             min-height: unset;
         }
-
         .device-card.compact h3 {
             font-size: 1rem;
             margin-bottom: 0.25rem;
         }
-
         .device-card.compact p,
         .device-card.compact .text-xs,
         .device-card.compact .text-sm {
             margin-bottom: 0.15rem;
         }
-
-        .device-card.compact .mt-4 {
-            margin-top: 0.5rem;
-        }
-
+        .device-card.compact .mt-4 { margin-top: 0.5rem; }
         .device-card.compact button {
             padding-top: 0.4rem;
             padding-bottom: 0.4rem;
@@ -107,51 +98,27 @@
 
     <script type="module">
         // IMPORTANT: User's Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDvnfIehUU8oT80-7g-h7di0RXc4DHtE4Y", // User's actual key
+        const envFirebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const hardcodedFirebaseConfig = { // Fallback, BE MINDFUL OF PUBLIC EXPOSURE if used
+            apiKey: "AIzaSyDvnfIehUU8oT80-7g-h7di0RXc4DHtE4Y",
             authDomain: "rap-stash.firebaseapp.com",
             projectId: "rap-stash",
-            storageBucket: "rap-stash.appspot.com", // Standard Firebase storage bucket ending
+            storageBucket: "rap-stash.appspot.com",
             messagingSenderId: "736536221160",
             appId: "1:736536221160:web:8edeb946dab0ca4182405d",
             measurementId: "G-W4JEBQYSCF"
         };
+        const firebaseConfig = Object.keys(envFirebaseConfig).length > 0 ? envFirebaseConfig : hardcodedFirebaseConfig;
 
-        // If firebaseConfig is empty (though user provided one), display a message
-        if (Object.keys(firebaseConfig).length === 0 && typeof __firebase_config === 'undefined') {
-            document.getElementById('app-container').innerHTML = `
-                <div class="text-center p-8">
-                    <h1 class="text-2xl font-bold text-red-600">Firebase Configuration Missing</h1>
-                    <p class="mt-4 text-neutral-700">
-                        Please provide your Firebase project configuration to use this application.
-                    </p>
-                </div>
-            `;
+        if (Object.keys(firebaseConfig).length === 0) {
+            document.getElementById('app-container').innerHTML = `<div class="text-center p-8"><h1 class="text-2xl font-bold text-red-600">Firebase Configuration Missing</h1><p class="mt-4 text-neutral-700">Please provide your Firebase project configuration.</p></div>`;
             throw new Error("Firebase configuration is missing.");
         }
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import {
-            getAuth,
-            signInAnonymously,
-            signInWithCustomToken,
-            onAuthStateChanged,
-            setPersistence,
-            browserLocalPersistence
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import {
-            getFirestore,
-            collection,
-            doc,
-            addDoc,
-            updateDoc,
-            deleteDoc,
-            onSnapshot,
-            Timestamp,
-            setLogLevel
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, Timestamp, setLogLevel, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -160,27 +127,27 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const devicesCollectionPath = `artifacts/${appId}/public/data/devices`;
         const devicesCol = collection(db, devicesCollectionPath);
+        const teamMembersCollectionPath = "team_members"; // Root collection
 
         let currentUser = null;
         let currentUserId = null;
         let allDevices = [];
+        let isTeamMember = false;
 
-        // --- Sorting and Compact View State ---
         let currentCategoryFilter = '';
-        let compactMode = true; // Set compact mode by default
+        let compactMode = true;
 
-        // DOM Elements (get them once after DOM is loaded)
+        // DOM Elements
         let deviceContainer, searchInput, reservationModal, initialsInput,
             confirmReservationButton, cancelReservationButton, deviceIdToReserveInput,
             userIdDisplay, loadingIndicator, messageModal, messageText, closeMessageButton,
             addDeviceButton, addDeviceModal, newDeviceNameInput, newDeviceCategoryInput,
-            newDeviceIMEIInput, newDeviceNotesInput,
+            newDeviceIMEIInput, newDeviceNotesInput, newDeviceIndexInput,
             confirmAddDeviceButton, cancelAddDeviceButton,
-            // Edit modal elements
-            editDeviceModal, editDeviceNameInput, editDeviceCategoryInput, editDeviceIMEIInput, editDeviceNotesInput,
-            confirmEditDeviceButton, cancelEditDeviceButton, editDeviceIdInput,
-            // Sorting/compact UI
-            sortCategorySelect, compactToggleButton;
+            editDeviceModal, editDeviceNameInput, editDeviceCategoryInput, editDeviceIMEIInput,
+            editDeviceNotesInput, editDeviceIndexInput, confirmEditDeviceButton, cancelEditDeviceButton, editDeviceIdInput,
+            sortCategorySelect, compactToggleButton,
+            manageTeamButton, addTeamMemberModal, newTeamMemberUidInput, confirmAddTeamMemberButton, cancelAddTeamMemberButton;
 
         function initializeDOMElements() {
             deviceContainer = document.getElementById('deviceContainer');
@@ -196,118 +163,140 @@
             messageText = document.getElementById('messageText');
             closeMessageButton = document.getElementById('closeMessageButton');
 
-            // New elements for adding devices
             addDeviceButton = document.getElementById('addDeviceButton');
             addDeviceModal = document.getElementById('addDeviceModal');
             newDeviceNameInput = document.getElementById('newDeviceName');
             newDeviceCategoryInput = document.getElementById('newDeviceCategory');
             newDeviceIMEIInput = document.getElementById('newDeviceIMEI');
+            newDeviceIndexInput = document.getElementById('newDeviceIndex');
             newDeviceNotesInput = document.getElementById('newDeviceNotes');
             confirmAddDeviceButton = document.getElementById('confirmAddDeviceButton');
             cancelAddDeviceButton = document.getElementById('cancelAddDeviceButton');
 
-            // Edit modal elements
             editDeviceModal = document.getElementById('editDeviceModal');
             editDeviceNameInput = document.getElementById('editDeviceName');
             editDeviceCategoryInput = document.getElementById('editDeviceCategory');
             editDeviceIMEIInput = document.getElementById('editDeviceIMEI');
+            editDeviceIndexInput = document.getElementById('editDeviceIndex');
             editDeviceNotesInput = document.getElementById('editDeviceNotes');
             confirmEditDeviceButton = document.getElementById('confirmEditDeviceButton');
             cancelEditDeviceButton = document.getElementById('cancelEditDeviceButton');
             editDeviceIdInput = document.getElementById('editDeviceId');
 
-            // Sorting/compact UI
             sortCategorySelect = document.getElementById('sortCategorySelect');
             compactToggleButton = document.getElementById('compactToggleButton');
+
+            // Team Management Elements
+            manageTeamButton = document.getElementById('manageTeamButton');
+            addTeamMemberModal = document.getElementById('addTeamMemberModal');
+            newTeamMemberUidInput = document.getElementById('newTeamMemberUid');
+            confirmAddTeamMemberButton = document.getElementById('confirmAddTeamMemberButton');
+            cancelAddTeamMemberButton = document.getElementById('cancelAddTeamMemberButton');
         }
 
+        async function checkTeamMembership(userId) {
+            if (!userId) {
+                isTeamMember = false;
+                updateUIAccess();
+                return;
+            }
+            try {
+                const teamMemberDocRef = doc(db, teamMembersCollectionPath, userId);
+                const teamMemberDocSnap = await getDoc(teamMemberDocRef);
+                isTeamMember = teamMemberDocSnap.exists();
+                console.log(`User ${userId} isTeamMember: ${isTeamMember}`);
+            } catch (error) {
+                console.error("Error checking team membership:", error);
+                showMessage(`Error checking team status: ${error.message}`, true);
+                isTeamMember = false;
+            }
+            updateUIAccess();
+        }
 
-        // --- Authentication ---
+        function updateUIAccess() {
+            if (addDeviceButton) {
+                addDeviceButton.style.display = isTeamMember ? 'block' : 'none';
+            }
+            if (manageTeamButton) {
+                manageTeamButton.style.display = isTeamMember ? 'inline-block' : 'none';
+            }
+            filterAndRenderDevices();
+        }
+
         async function initializeAuth() {
             try {
                 await setPersistence(auth, browserLocalPersistence);
-
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         currentUser = user;
                         currentUserId = user.uid;
                         if (userIdDisplay) userIdDisplay.textContent = `Your User ID: ${currentUserId}`;
                         console.log("User signed in with UID:", currentUserId);
-                        await fetchAndRenderDevices();
+                        await checkTeamMembership(currentUserId);
                     } else {
-                        console.log("No user signed in. Attempting to sign in...");
+                        currentUser = null;
+                        currentUserId = null;
+                        isTeamMember = false;
                         if (userIdDisplay) userIdDisplay.textContent = "User ID: Not signed in";
+                        console.log("No user signed in. Attempting to sign in...");
                         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                            console.log("Attempting sign in with custom token.");
-                            await signInWithCustomToken(auth, __initial_auth_token);
+                            await signInWithCustomToken(auth, __initial_auth_token).catch(err => {
+                                console.error("Custom token sign-in failed, trying anonymous:", err);
+                                return signInAnonymously(auth);
+                            });
                         } else {
-                            console.log("Attempting anonymous sign in.");
                             await signInAnonymously(auth);
                         }
+                        updateUIAccess(); // Update UI for potentially anonymous user
                     }
                 });
             } catch (error) {
                 console.error("Authentication error:", error);
-                showMessage(`Authentication error: ${error.message}`);
+                showMessage(`Authentication error: ${error.message}`, true);
                 if (userIdDisplay) userIdDisplay.textContent = "User ID: Auth Error";
+                isTeamMember = false;
+                updateUIAccess();
             }
         }
 
-
-        // --- Device Rendering ---
         function renderDevices(devicesToRender) {
             if (!deviceContainer) return;
             deviceContainer.innerHTML = '';
             if (devicesToRender.length === 0) {
-                deviceContainer.innerHTML = `<p class="text-neutral-500 col-span-full text-center py-8">No devices found. Ensure your Firestore database is populated at '${devicesCollectionPath}'.</p>`;
+                deviceContainer.innerHTML = `<p class="text-neutral-500 col-span-full text-center py-8">No devices found.</p>`;
                 return;
             }
 
             devicesToRender.forEach(device => {
                 const deviceCard = document.createElement('div');
                 deviceCard.className = `device-card bg-white p-6 rounded-xl shadow-lg border border-neutral-200 flex flex-col justify-between${compactMode ? ' compact' : ''}`;
-                deviceCard.style.cursor = compactMode ? 'pointer' : '';
+                deviceCard.style.cursor = compactMode ? 'pointer' : 'default'; // Clickable in compact mode to show actions
 
-                // Show Notes instead of specs
-                let notesHtml = '';
-                if (device.notes && device.notes.trim()) {
-                    notesHtml = `<p class="text-sm text-neutral-700 mb-2"><strong>Notes:</strong> ${device.notes}</p>`;
-                } else {
-                    notesHtml = '<p class="text-sm text-neutral-500 mb-2">No notes.</p>';
-                }
-
+                let notesHtml = device.notes && device.notes.trim() ? `<p class="text-sm text-neutral-700 mb-2"><strong>Notes:</strong> ${device.notes}</p>` : '<p class="text-sm text-neutral-500 mb-2">No notes.</p>';
                 let reservationStatusHtml = '';
                 if (device.reservedByInitials) {
-                    const reservationDate = device.reservationDate ?
-                        (device.reservationDate.toDate ? device.reservationDate.toDate().toLocaleDateString() : new Date(device.reservationDate).toLocaleDateString())
-                        : 'N/A';
-                    reservationStatusHtml = `
-                        <p class="text-sm font-semibold text-red-600">Reserved by: ${device.reservedByInitials}</p>
-                        <p class="text-xs text-red-500">On: ${reservationDate}</p>
-                    `;
+                    const reservationDate = device.reservationDate?.toDate ? device.reservationDate.toDate().toLocaleDateString() : (device.reservationDate ? new Date(device.reservationDate).toLocaleDateString() : 'N/A');
+                    reservationStatusHtml = `<p class="text-sm font-semibold text-red-600">Reserved by: ${device.reservedByInitials}</p><p class="text-xs text-red-500">On: ${reservationDate}</p>`;
                 } else {
                     reservationStatusHtml = `<p class="text-sm font-semibold text-green-600">Available</p>`;
                 }
 
-                let removeButtonHtml = `<button data-device-id="${device.id}" class="remove-btn w-full bg-red-500 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out mt-2">Remove</button>`;
-                let editButtonHtml = `<button data-device-id="${device.id}" class="edit-btn w-full bg-neutral-400 hover:bg-neutral-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out mt-2">Edit</button>`;
+                const reserveOrReleaseOrStatusBtn = generateButtonHtml(device);
+                let actionButtonsHtml = '';
 
-                let buttonsHtml = '';
                 if (!compactMode) {
-                    buttonsHtml = `
-                        ${generateButtonHtml(device)}
-                        ${editButtonHtml}
-                        ${removeButtonHtml}
-                    `;
+                    actionButtonsHtml = reserveOrReleaseOrStatusBtn;
+                    if (isTeamMember) {
+                        actionButtonsHtml += `<button data-device-id="${device.id}" class="edit-btn w-full bg-neutral-400 hover:bg-neutral-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out mt-2">Edit</button>`;
+                        actionButtonsHtml += `<button data-device-id="${device.id}" class="remove-btn w-full bg-red-500 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out mt-2">Remove</button>`;
+                    }
                 } else {
-                    // In compact mode, actions are hidden by default, shown on click
-                    buttonsHtml = `
-                        <div class="compact-actions hidden">
-                            ${generateButtonHtml(device)}
-                            ${editButtonHtml}
-                            ${removeButtonHtml}
-                        </div>
-                    `;
+                    let compactActionsContent = reserveOrReleaseOrStatusBtn;
+                     if (isTeamMember) {
+                        compactActionsContent += `<button data-device-id="${device.id}" class="edit-btn w-full bg-neutral-400 hover:bg-neutral-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out mt-2">Edit</button>`;
+                        compactActionsContent += `<button data-device-id="${device.id}" class="remove-btn w-full bg-red-500 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out mt-2">Remove</button>`;
+                    }
+                    actionButtonsHtml = `<div class="compact-actions hidden">${compactActionsContent}</div>`;
                 }
 
                 deviceCard.innerHTML = `
@@ -322,436 +311,322 @@
                         ${reservationStatusHtml}
                     </div>
                     <div class="mt-4 flex flex-col gap-2">
-                        ${buttonsHtml}
-                    </div>
-                `;
+                        ${actionButtonsHtml}
+                    </div>`;
                 deviceContainer.appendChild(deviceCard);
 
-                // Compact mode: clicking the card toggles actions
-                if (compactMode) {
+                if (compactMode) { // Add click listener to card if in compact mode for anyone
                     deviceCard.addEventListener('click', function (e) {
-                        // Prevent toggling if a button inside actions is clicked
                         if (e.target.closest('button')) return;
                         const actions = deviceCard.querySelector('.compact-actions');
-                        if (actions) {
-                            actions.classList.toggle('hidden');
-                        }
+                        if (actions) actions.classList.toggle('hidden');
                     });
                 }
             });
 
-            // Attach action button listeners (for both modes)
-            document.querySelectorAll('.reserve-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openReservationModal(button.dataset.deviceId);
-                });
-            });
-            document.querySelectorAll('.release-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    releaseDevice(button.dataset.deviceId);
-                });
-            });
-            document.querySelectorAll('.remove-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    removeDevice(button.dataset.deviceId);
-                });
-            });
-            document.querySelectorAll('.edit-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openEditDeviceModal(button.dataset.deviceId);
-                });
-            });
+            document.querySelectorAll('.reserve-btn').forEach(button => button.addEventListener('click', (e) => { e.stopPropagation(); openReservationModal(button.dataset.deviceId); }));
+            document.querySelectorAll('.release-btn').forEach(button => button.addEventListener('click', (e) => { e.stopPropagation(); releaseDevice(button.dataset.deviceId); }));
+            if (isTeamMember) { // Only attach these if user is a team member, as buttons won't exist otherwise
+                document.querySelectorAll('.remove-btn').forEach(button => button.addEventListener('click', (e) => { e.stopPropagation(); removeDevice(button.dataset.deviceId); }));
+                document.querySelectorAll('.edit-btn').forEach(button => button.addEventListener('click', (e) => { e.stopPropagation(); openEditDeviceModal(button.dataset.deviceId); }));
+            }
         }
 
         function generateButtonHtml(device) {
             if (device.reservedByUserId === currentUserId && currentUserId) {
                 return `<button data-device-id="${device.id}" class="release-btn w-full bg-accent hover:bg-yellow-500 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out">Release</button>`;
-            } else if (!device.reservedByInitials) {
-                return `<button data-device-id="${device.id}" class="reserve-btn w-full bg-primary hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out">Reserve</button>`;
-            } else {
-                return `<button class="w-full bg-neutral-300 text-neutral-500 font-semibold py-2 px-4 rounded-lg cursor-not-allowed" disabled>Reserved</button>`;
+            } else if (!device.reservedByInitials) { // Device is available
+                if (currentUserId) { // Any authenticated user can attempt to reserve
+                    return `<button data-device-id="${device.id}" class="reserve-btn w-full bg-primary hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out">Reserve</button>`;
+                } else { // User not authenticated
+                    return `<button class="w-full bg-neutral-300 text-neutral-500 font-semibold py-2 px-4 rounded-lg cursor-not-allowed" disabled>Sign in to Reserve</button>`;
+                }
+            } else { // Device is reserved by someone else
+                return `<button class="w-full bg-neutral-300 text-neutral-500 font-semibold py-2 px-4 rounded-lg cursor-not-allowed" disabled>Reserved by ${device.reservedByInitials}</button>`;
             }
         }
 
-        // --- Category Sorting ---
         function getUniqueCategories() {
-            const categories = allDevices.map(d => d.category || 'Uncategorized');
-            return Array.from(new Set(categories)).sort();
+            const categories = [...new Set(allDevices.map(d => d.category || 'Uncategorized'))].sort();
+            return categories;
         }
 
         function populateCategoryDropdown() {
             if (!sortCategorySelect) return;
             const categories = getUniqueCategories();
-            sortCategorySelect.innerHTML = `<option value="">All Categories</option>` +
-                categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+            sortCategorySelect.innerHTML = `<option value="">All Categories</option>${categories.map(cat => `<option value="${cat}">${cat}</option>`).join('')}`;
             sortCategorySelect.value = currentCategoryFilter;
         }
 
-        // --- Filtering, Sorting, and Rendering ---
         function filterAndRenderDevices() {
-            if (!searchInput) return;
+            if (!searchInput || !deviceContainer) return;
             const searchTerm = searchInput.value.toLowerCase();
-            let filteredDevices = allDevices.filter(device => {
-                return (device.name?.toLowerCase().includes(searchTerm) ||
-                    device.category?.toLowerCase().includes(searchTerm) ||
-                    device.imei?.toLowerCase().includes(searchTerm) ||
-                    device.simNumber?.toLowerCase().includes(searchTerm) ||
-                    device.notes?.toLowerCase().includes(searchTerm)
-                );
-            });
+            let filteredDevices = allDevices.filter(device =>
+                (device.name?.toLowerCase().includes(searchTerm) ||
+                 device.category?.toLowerCase().includes(searchTerm) ||
+                 device.imei?.toLowerCase().includes(searchTerm) ||
+                 device.notes?.toLowerCase().includes(searchTerm))
+            );
             if (currentCategoryFilter) {
                 filteredDevices = filteredDevices.filter(d => (d.category || 'Uncategorized') === currentCategoryFilter);
             }
             renderDevices(filteredDevices);
         }
 
-        // --- Compact Mode Toggle ---
         function toggleCompactMode() {
             compactMode = !compactMode;
-            if (compactToggleButton) {
-                compactToggleButton.textContent = compactMode ? "Device Actions" : "Compact View";
-            }
+            if (compactToggleButton) compactToggleButton.textContent = compactMode ? "Expand Actions" : "Compact View";
             filterAndRenderDevices();
         }
 
-        // --- Remove Device Logic ---
         async function removeDevice(deviceId) {
-            if (!deviceId || !currentUserId) {
-                showMessage("Error: Missing device ID or user not signed in.");
-                return;
-            }
-            // Confirm before deleting
-            if (!confirm("Are you sure you want to remove this device? This action cannot be undone.")) {
-                return;
-            }
+            // Guarded by isTeamMember check before calling (event listener attachment)
+            if (!isTeamMember) { showMessage("Permission denied.", true); return; } // Double check
+            if (!deviceId || !currentUserId) { showMessage("Error: Missing ID or user.", true); return; }
+            const confirmed = await showConfirmationModal("Are you sure you want to remove this device? This action cannot be undone.");
+            if (!confirmed) return;
             try {
-                const deviceRef = doc(db, devicesCollectionPath, deviceId);
-                await deleteDoc(deviceRef);
+                await deleteDoc(doc(db, devicesCollectionPath, deviceId));
                 showMessage("Device removed successfully!");
             } catch (error) {
                 console.error("Error removing device: ", error);
-                showMessage(`Error removing device: ${error.message}`);
+                showMessage(`Error removing device: ${error.message}`, true);
             }
         }
 
-        // --- Data Fetching & Real-time Updates ---
         async function fetchAndRenderDevices() {
-            if (!currentUserId) {
-                console.log("User not authenticated, cannot fetch devices.");
+            if (!currentUserId && !auth.currentUser) {
+                console.log("User not authenticated, cannot fetch devices yet.");
                 if (loadingIndicator) loadingIndicator.style.display = 'none';
+                if (deviceContainer && deviceContainer.innerHTML === '') deviceContainer.innerHTML = `<p class="text-neutral-500 col-span-full text-center py-8">Sign in to view devices.</p>`;
                 return;
             }
-
             if (loadingIndicator) loadingIndicator.style.display = 'flex';
-
             onSnapshot(devicesCol, (snapshot) => {
                 allDevices = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 populateCategoryDropdown();
                 filterAndRenderDevices();
-                console.log("Fetched/Updated devices:", allDevices);
+                console.log("Fetched/Updated devices:", allDevices.length);
                 if (loadingIndicator) loadingIndicator.style.display = 'none';
             }, (error) => {
                 console.error("Error fetching devices: ", error);
-                showMessage(`Error fetching devices: ${ error.message } `);
+                showMessage(`Error fetching devices: ${error.message}`, true);
                 if (loadingIndicator) loadingIndicator.style.display = 'none';
+                if (deviceContainer) deviceContainer.innerHTML = `<p class="text-red-500 col-span-full text-center py-8">Error loading devices.</p>`;
             });
         }
 
-        // --- Reservation Logic ---
         function openReservationModal(deviceId) {
-            if (!currentUserId) {
-                showMessage("You must be signed in to reserve a device.");
-                return;
-            }
+            // No isTeamMember check here, any authenticated user can open
+            if (!currentUserId) { showMessage("You must be signed in to reserve a device.", true); return; }
             if (deviceIdToReserveInput) deviceIdToReserveInput.value = deviceId;
             if (initialsInput) initialsInput.value = '';
             if (reservationModal) reservationModal.classList.add('active');
             if (initialsInput) initialsInput.focus();
         }
 
-        function closeReservationModal() {
-            if (reservationModal) reservationModal.classList.remove('active');
-        }
+        function closeReservationModal() { if (reservationModal) reservationModal.classList.remove('active'); }
 
         async function confirmReservation() {
+            // No isTeamMember check here, relies on security rules
             if (!deviceIdToReserveInput || !initialsInput || !confirmReservationButton) return;
-
             const deviceId = deviceIdToReserveInput.value;
             const initials = initialsInput.value.trim().toUpperCase();
+            if (!initials) { showMessage("Please enter your initials.", true, true); return; }
+            if (initials.length > 5) { showMessage("Initials max 5 chars.", true, true); return; }
+            if (!deviceId || !currentUserId) { showMessage("Error: Missing ID or user.", true, true); closeReservationModal(); return; }
 
-            if (!initials) {
-                showMessage("Please enter your initials.", true, true);
-                return;
-            }
-            if (initials.length > 5) {
-                showMessage("Initials should be 5 characters or less.", true, true);
-                return;
-            }
-
-            if (!deviceId || !currentUserId) {
-                showMessage("Error: Missing device ID or user not signed in.", true, true);
-                closeReservationModal();
-                return;
-            }
-
-            confirmReservationButton.disabled = true;
-            confirmReservationButton.textContent = 'Reserving...';
-
+            confirmReservationButton.disabled = true; confirmReservationButton.textContent = 'Reserving...';
             try {
-                const deviceRef = doc(db, devicesCollectionPath, deviceId);
-                await updateDoc(deviceRef, {
-                    reservedByInitials: initials,
-                    reservedByUserId: currentUserId,
-                    reservationDate: Timestamp.now()
+                await updateDoc(doc(db, devicesCollectionPath, deviceId), {
+                    reservedByInitials: initials, reservedByUserId: currentUserId, reservationDate: Timestamp.now()
                 });
                 showMessage("Device reserved successfully!");
                 closeReservationModal();
             } catch (error) {
                 console.error("Error reserving device: ", error);
-                showMessage(`Error reserving device: ${ error.message } `, true, true);
+                showMessage(`Error reserving device: ${error.message}`, true, true);
             } finally {
-                confirmReservationButton.disabled = false;
-                confirmReservationButton.textContent = 'Confirm Reservation';
+                confirmReservationButton.disabled = false; confirmReservationButton.textContent = 'Confirm Reservation';
             }
         }
 
         async function releaseDevice(deviceId) {
-            if (!deviceId || !currentUserId) {
-                showMessage("Error: Missing device ID or user not signed in.");
-                return;
-            }
-
+            if (!deviceId || !currentUserId) { showMessage("Error: Missing ID or user.", true); return; }
             try {
                 const deviceRef = doc(db, devicesCollectionPath, deviceId);
                 const deviceToRelease = allDevices.find(d => d.id === deviceId);
                 if (deviceToRelease && deviceToRelease.reservedByUserId !== currentUserId) {
-                    showMessage("You can only release devices you reserved.");
+                    // Firestore rules should be the primary enforcer for who can release.
+                    // Client-side check for UX.
+                    showMessage("You can only release devices you reserved.", true);
                     return;
                 }
-
-                await updateDoc(deviceRef, {
-                    reservedByInitials: null,
-                    reservedByUserId: null,
-                    reservationDate: null
-                });
+                await updateDoc(deviceRef, { reservedByInitials: null, reservedByUserId: null, reservationDate: null });
                 showMessage("Device released successfully!");
             } catch (error) {
                 console.error("Error releasing device: ", error);
-                showMessage(`Error releasing device: ${ error.message } `);
+                showMessage(`Error releasing device: ${error.message}`, true);
             }
         }
 
-        // --- Add Device Logic ---
+        // --- Add/Edit Device Logic (Team Members Only) ---
         function openAddDeviceModal() {
-            if (!currentUserId) {
-                showMessage("You must be signed in to add a device.");
-                return;
-            }
-            // Clear previous input values
+            if (!isTeamMember) { showMessage("Permission denied.", true); return; }
             if (newDeviceNameInput) newDeviceNameInput.value = '';
             if (newDeviceCategoryInput) newDeviceCategoryInput.value = '';
             if (newDeviceIMEIInput) newDeviceIMEIInput.value = '';
+            if (newDeviceIndexInput) newDeviceIndexInput.value = '';
             if (newDeviceNotesInput) newDeviceNotesInput.value = '';
-            if (document.getElementById('newDeviceIndex')) document.getElementById('newDeviceIndex').value = '';
             if (addDeviceModal) addDeviceModal.classList.add('active');
             if (newDeviceNameInput) newDeviceNameInput.focus();
         }
-
-        function closeAddDeviceModal() {
-            if (addDeviceModal) addDeviceModal.classList.remove('active');
-        }
-
+        function closeAddDeviceModal() { if (addDeviceModal) addDeviceModal.classList.remove('active'); }
         async function confirmAddDevice() {
-            if (!newDeviceNameInput || !confirmAddDeviceButton) return;
-
+            if (!isTeamMember) { showMessage("Permission denied.", true, true); closeAddDeviceModal(); return; }
             const name = newDeviceNameInput.value.trim();
             const category = newDeviceCategoryInput.value.trim();
             const imei = newDeviceIMEIInput.value.trim();
             const notes = newDeviceNotesInput.value.trim();
-            const indexInput = document.getElementById('newDeviceIndex');
-            const index = indexInput ? indexInput.value.trim() : '';
+            const index = newDeviceIndexInput.value.trim();
+            if (!name || name.length < 3 || !category || !index) { showMessage("Name (min 3 chars), category, index required.", true, true); return; }
+            if (isNaN(Number(index))) { showMessage("Index must be a number.", true, true); return; }
 
-            if (!name || name.length < 3 || !category || !index) {
-                showMessage("Device name, category, and index are required.", true, true);
-                return;
-            }
-            if (isNaN(Number(index))) {
-                showMessage("Index must be a number.", true, true);
-                return;
-            }
-
-            confirmAddDeviceButton.disabled = true;
-            confirmAddDeviceButton.textContent = 'Adding...';
-
+            confirmAddDeviceButton.disabled = true; confirmAddDeviceButton.textContent = 'Adding...';
             try {
-                const newDeviceData = {
-                    name: name,
-                    category: category,
-                    imei: imei || 'N/A',
-                    notes: notes || '',
-                    reservedByInitials: null,
-                    reservedByUserId: null,
-                    reservationDate: null,
-                    addedByUserId: currentUserId,
-                    addedDate: Timestamp.now(),
-                    index: Number(index)
-                };
-
-                await addDoc(devicesCol, newDeviceData);
-                showMessage("Device added successfully!");
-                closeAddDeviceModal();
-            } catch (error) {
-                console.error("Error adding device: ", error);
-                showMessage(`Error adding device: ${ error.message } `, true, true);
-            } finally {
-                confirmAddDeviceButton.disabled = false;
-                confirmAddDeviceButton.textContent = 'Add Device';
-            }
+                await addDoc(devicesCol, {
+                    name, category, imei: imei || 'N/A', notes: notes || '', index: Number(index),
+                    reservedByInitials: null, reservedByUserId: null, reservationDate: null,
+                    addedByUserId: currentUserId, addedDate: Timestamp.now()
+                });
+                showMessage("Device added successfully!"); closeAddDeviceModal();
+            } catch (error) { console.error("Error adding device: ", error); showMessage(`Error adding device: ${error.message}`, true, true);
+            } finally { confirmAddDeviceButton.disabled = false; confirmAddDeviceButton.textContent = 'Add Device'; }
         }
 
-        // --- Edit Device Logic ---
         function openEditDeviceModal(deviceId) {
-            if (!currentUserId) {
-                showMessage("You must be signed in to edit a device.");
-                return;
-            }
+            if (!isTeamMember) { showMessage("Permission denied.", true); return; }
             const device = allDevices.find(d => d.id === deviceId);
-            if (!device) {
-                showMessage("Device not found.");
-                return;
-            }
+            if (!device) { showMessage("Device not found.", true); return; }
             if (editDeviceIdInput) editDeviceIdInput.value = device.id;
             if (editDeviceNameInput) editDeviceNameInput.value = device.name || '';
             if (editDeviceCategoryInput) editDeviceCategoryInput.value = device.category || '';
             if (editDeviceIMEIInput) editDeviceIMEIInput.value = device.imei || '';
+            if (editDeviceIndexInput) editDeviceIndexInput.value = device.index !== undefined ? device.index.toString() : '';
             if (editDeviceNotesInput) editDeviceNotesInput.value = device.notes || '';
-            if (document.getElementById('editDeviceIndex')) document.getElementById('editDeviceIndex').value = device.index !== undefined ? device.index : '';
             if (editDeviceModal) editDeviceModal.classList.add('active');
             if (editDeviceNameInput) editDeviceNameInput.focus();
         }
-
-        function closeEditDeviceModal() {
-            if (editDeviceModal) editDeviceModal.classList.remove('active');
-        }
-
+        function closeEditDeviceModal() { if (editDeviceModal) editDeviceModal.classList.remove('active'); }
         async function confirmEditDevice() {
-            if (!editDeviceIdInput || !editDeviceNameInput || !confirmEditDeviceButton) return;
-
+            if (!isTeamMember) { showMessage("Permission denied.", true, true); closeEditDeviceModal(); return; }
             const deviceId = editDeviceIdInput.value;
             const name = editDeviceNameInput.value.trim();
             const category = editDeviceCategoryInput.value.trim();
             const imei = editDeviceIMEIInput.value.trim();
             const notes = editDeviceNotesInput.value.trim();
-            const indexInput = document.getElementById('editDeviceIndex');
-            const index = indexInput ? indexInput.value.trim() : '';
+            const index = editDeviceIndexInput.value.trim();
+            if (!name || name.length < 3 || !category || !index) { showMessage("Name (min 3 chars), category, index required.", true, true); return; }
+            if (isNaN(Number(index))) { showMessage("Index must be a number.", true, true); return; }
 
-            if (!name || name.length < 3 || !category || !index) {
-                showMessage("Device name, category, and index are required.", true, true);
-                return;
-            }
-            if (isNaN(Number(index))) {
-                showMessage("Index must be a number.", true, true);
-                return;
-            }
-
-            confirmEditDeviceButton.disabled = true;
-            confirmEditDeviceButton.textContent = 'Saving...';
-
+            confirmEditDeviceButton.disabled = true; confirmEditDeviceButton.textContent = 'Saving...';
             try {
-                const deviceRef = doc(db, devicesCollectionPath, deviceId);
-                await updateDoc(deviceRef, {
-                    name: name,
-                    category: category,
-                    imei: imei || 'N/A',
-                    notes: notes || '',
-                    index: Number(index)
-                });
-                showMessage("Device updated successfully!");
-                closeEditDeviceModal();
+                await updateDoc(doc(db, devicesCollectionPath, deviceId), { name, category, imei: imei || 'N/A', notes: notes || '', index: Number(index) });
+                showMessage("Device updated successfully!"); closeEditDeviceModal();
+            } catch (error) { console.error("Error updating device: ", error); showMessage(`Error updating device: ${error.message}`, true, true);
+            } finally { confirmEditDeviceButton.disabled = false; confirmEditDeviceButton.textContent = 'Save Changes'; }
+        }
+
+        // --- Team Member Management Logic (Team Members Only) ---
+        function openAddTeamMemberModal() {
+            if (!isTeamMember) { showMessage("Only team members can manage team.", true); return; }
+            if (newTeamMemberUidInput) newTeamMemberUidInput.value = '';
+            if (addTeamMemberModal) addTeamMemberModal.classList.add('active');
+            if (newTeamMemberUidInput) newTeamMemberUidInput.focus();
+        }
+        function closeAddTeamMemberModal() { if (addTeamMemberModal) addTeamMemberModal.classList.remove('active'); }
+        async function confirmAddTeamMember() {
+            if (!isTeamMember) { showMessage("Permission denied.", true, true); closeAddTeamMemberModal(); return; }
+            const newUid = newTeamMemberUidInput.value.trim();
+            if (!newUid) { showMessage("Please enter the User ID of the new team member.", true, true); return; }
+            // Basic UID format check (Firebase UIDs are typically 28 chars, alphanumeric)
+            if (newUid.length < 20 || !/^[a-zA-Z0-9]+$/.test(newUid)) { // Basic validation
+                showMessage("Invalid User ID format.", true, true); return;
+            }
+
+            confirmAddTeamMemberButton.disabled = true; confirmAddTeamMemberButton.textContent = 'Adding...';
+            try {
+                const teamMemberRef = doc(db, teamMembersCollectionPath, newUid);
+                // You can store additional info, e.g., who added them and when
+                await setDoc(teamMemberRef, { addedBy: currentUserId, addedAt: Timestamp.now(), role: "member" });
+                showMessage(`User ${newUid} added to the team successfully! They may need to refresh.`, false, true);
+                closeAddTeamMemberModal();
             } catch (error) {
-                console.error("Error updating device: ", error);
-                showMessage(`Error updating device: ${error.message}`, true, true);
+                console.error("Error adding team member: ", error);
+                showMessage(`Error adding team member: ${error.message}`, true, true);
             } finally {
-                confirmEditDeviceButton.disabled = false;
-                confirmEditDeviceButton.textContent = 'Save Changes';
+                confirmAddTeamMemberButton.disabled = false; confirmAddTeamMemberButton.textContent = 'Add Team Member';
             }
         }
 
-        // --- Message Modal ---
+
+        // --- Message & Confirmation Modals ---
         function showMessage(message, isError = false, inModal = false) {
-            const modalMessageArea = reservationModal ? reservationModal.querySelector('.modal-message-area') : null;
-            const addModalMessageArea = addDeviceModal ? addDeviceModal.querySelector('.modal-message-area') : null;
-            const editModalMessageArea = editDeviceModal ? editDeviceModal.querySelector('.modal-message-area') : null;
+            const activeModal = document.querySelector('.modal.active');
+            const modalMessageArea = activeModal?.querySelector('.modal-message-area');
 
-
-            if (inModal && reservationModal && reservationModal.classList.contains('active') && modalMessageArea) {
+            if (inModal && modalMessageArea) {
                 modalMessageArea.textContent = message;
-                modalMessageArea.className = `modal - message - area text - sm mb - 3 ${ isError ? 'text-red-600' : 'text-green-600' } `;
+                modalMessageArea.className = `modal-message-area text-sm mb-3 ${isError ? 'text-red-600' : 'text-green-600'}`;
                 setTimeout(() => { modalMessageArea.textContent = ''; }, 3000);
-            } else if (inModal && addDeviceModal && addDeviceModal.classList.contains('active') && addModalMessageArea) {
-                addModalMessageArea.textContent = message;
-                addModalMessageArea.className = `modal - message - area text - sm mb - 3 ${ isError ? 'text-red-600' : 'text-green-600' } `;
-                setTimeout(() => { addModalMessageArea.textContent = ''; }, 3000);
-            } else if (inModal && editDeviceModal && editDeviceModal.classList.contains('active') && editModalMessageArea) {
-                editModalMessageArea.textContent = message;
-                editModalMessageArea.className = `modal - message - area text - sm mb - 3 ${ isError ? 'text-red-600' : 'text-green-600' } `;
-                setTimeout(() => { editModalMessageArea.textContent = ''; }, 3000);
-            }
-            else if (messageModal && messageText) {
+            } else if (messageModal && messageText) {
                 messageText.textContent = message;
-                messageText.className = `text - lg mb - 6 ${ isError ? 'text-red-700' : 'text-green-700' } `;
+                messageText.className = `text-lg mb-6 ${isError ? 'text-red-700' : 'text-green-700'}`;
                 messageModal.classList.add('active');
-            } else {
-                console.log(`Message(isError: ${ isError }): ${ message } `);
+            } else { console.log(`Message (isError: ${isError}): ${message}`); }
+        }
+        function closeMessageModal() { if (messageModal) messageModal.classList.remove('active'); }
+
+        const confirmationModal = document.getElementById('confirmationModal');
+        const confirmationMessageText = document.getElementById('confirmationMessageText');
+        const confirmActionButton = document.getElementById('confirmActionButton');
+        const cancelActionButton = document.getElementById('cancelActionButton');
+        let resolveConfirmation;
+        async function showConfirmationModal(message) {
+            if (!confirmationModal || !confirmationMessageText || !confirmActionButton || !cancelActionButton) {
+                console.warn("Confirmation modal elements not found. Defaulting to true."); return true;
             }
+            confirmationMessageText.textContent = message;
+            confirmationModal.classList.add('active');
+            return new Promise((resolve) => { resolveConfirmation = resolve; });
         }
+        if (confirmActionButton) confirmActionButton.addEventListener('click', () => { if (confirmationModal) confirmationModal.classList.remove('active'); if (resolveConfirmation) resolveConfirmation(true); });
+        if (cancelActionButton) cancelActionButton.addEventListener('click', () => { if (confirmationModal) confirmationModal.classList.remove('active'); if (resolveConfirmation) resolveConfirmation(false); });
 
-        function closeMessageModal() {
-            if (messageModal) messageModal.classList.remove('active');
-        }
-
-        // --- Event Listeners & App Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
-            initializeDOMElements(); // Get all DOM elements
-
+            initializeDOMElements();
             if (searchInput) searchInput.addEventListener('input', filterAndRenderDevices);
-            if (sortCategorySelect) sortCategorySelect.addEventListener('change', (e) => {
-                currentCategoryFilter = e.target.value;
-                filterAndRenderDevices();
-            });
+            if (sortCategorySelect) sortCategorySelect.addEventListener('change', (e) => { currentCategoryFilter = e.target.value; filterAndRenderDevices(); });
             if (compactToggleButton) compactToggleButton.addEventListener('click', toggleCompactMode);
             if (confirmReservationButton) confirmReservationButton.addEventListener('click', confirmReservation);
             if (cancelReservationButton) cancelReservationButton.addEventListener('click', closeReservationModal);
-            if (closeMessageButton) closeMessageButton.addEventListener('click', closeMessageModal);
-
-            // New event listeners for adding devices
             if (addDeviceButton) addDeviceButton.addEventListener('click', openAddDeviceModal);
             if (confirmAddDeviceButton) confirmAddDeviceButton.addEventListener('click', confirmAddDevice);
             if (cancelAddDeviceButton) cancelAddDeviceButton.addEventListener('click', closeAddDeviceModal);
-
-            // Edit modal event listeners
             if (confirmEditDeviceButton) confirmEditDeviceButton.addEventListener('click', confirmEditDevice);
             if (cancelEditDeviceButton) cancelEditDeviceButton.addEventListener('click', closeEditDeviceModal);
+            if (closeMessageButton) closeMessageButton.addEventListener('click', closeMessageModal);
 
-            if (Object.keys(firebaseConfig).length > 0 || typeof __firebase_config !== 'undefined') {
-                initializeAuth();
+            // Team Management Listeners
+            if (manageTeamButton) manageTeamButton.addEventListener('click', openAddTeamMemberModal);
+            if (confirmAddTeamMemberButton) confirmAddTeamMemberButton.addEventListener('click', confirmAddTeamMember);
+            if (cancelAddTeamMemberButton) cancelAddTeamMemberButton.addEventListener('click', closeAddTeamMemberModal);
+
+            if (Object.keys(firebaseConfig).length > 0) {
+                initializeAuth().then(() => { if (auth.currentUser) fetchAndRenderDevices(); });
             } else {
-                // This case should ideally be caught by the top-level config check,
-                // but as a fallback for app-container message.
-                const appContainer = document.getElementById('app-container');
-                if (appContainer) {
-                    appContainer.innerHTML = `
-                    < div class="text-center p-8" >
-                            <h1 class="text-2xl font-bold text-red-600">Critical Error</h1>
-                            <p class="mt-4 text-neutral-700">
-                                Firebase configuration is missing. The application cannot start.
-                            </p>
-                        </div >`;
-                }
+                // Error already handled by top-level check
+                if (loadingIndicator) loadingIndicator.style.display = 'none';
             }
         });
     </script>
@@ -762,165 +637,106 @@
             <p id="userIdDisplay" class="text-sm text-neutral-500 mt-2">User ID: Loading...</p>
         </header>
 
-        <!-- Sorting and Compact Controls -->
-        <div class="flex flex-col md:flex-row items-center justify-between mb-4 gap-2">
-            <div>
+        <div class="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
+            <div class="flex items-center gap-4">
                 <label for="sortCategorySelect" class="mr-2 font-medium text-neutral-700">Category:</label>
                 <select id="sortCategorySelect" class="p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
                     <option value="">All Categories</option>
                 </select>
             </div>
-            <button id="compactToggleButton"
-                class="bg-neutral-200 hover:bg-neutral-300 text-neutral-700 font-semibold py-2 px-4 rounded-lg transition">
-                Device Actions
-            </button>
+            <div class="flex items-center gap-2">
+                <button id="compactToggleButton" class="bg-neutral-200 hover:bg-neutral-300 text-neutral-700 font-semibold py-2 px-4 rounded-lg transition">
+                    Expand Actions
+                </button>
+                <button id="manageTeamButton" style="display: none;" class="bg-accent hover:bg-yellow-500 text-white font-semibold py-2 px-4 rounded-lg transition">
+                    Manage Team
+                </button>
+            </div>
         </div>
 
-        <div
-            class="mb-8 p-6 bg-white rounded-xl shadow-md flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-            <input type="text" id="searchInput" placeholder="Search by name, IMEI, category, specs..."
+        <div class="mb-8 p-6 bg-white rounded-xl shadow-md flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
+            <input type="text" id="searchInput" placeholder="Search by name, IMEI, category, notes..."
                 class="flex-grow p-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow">
-            <button id="addDeviceButton"
-                class="w-full md:w-auto bg-secondary hover:bg-emerald-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-150 ease-in-out shadow-md">
+            <button id="addDeviceButton" style="display: none;" class="w-full md:w-auto bg-secondary hover:bg-emerald-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-150 ease-in-out shadow-md">
                 + Add New Device
             </button>
         </div>
 
         <div id="loadingIndicator" class="flex justify-center items-center py-10">
-            <svg class="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none"
-                viewBox="0 0 24 24">
+            <svg class="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                </path>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
             <p class="ml-3 text-neutral-600">Loading devices...</p>
         </div>
 
-        <div id="deviceContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        </div>
+        <div id="deviceContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
     </div>
 
-    <div id="reservationModal"
-        class="modal fixed inset-0 bg-gray-800 bg-opacity-75 items-center justify-center p-4 z-50">
+    <div id="reservationModal" class="modal fixed inset-0 bg-gray-800 bg-opacity-75 items-center justify-center p-4 z-50">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md transform transition-all">
             <h2 class="text-2xl font-semibold text-primary mb-6">Reserve Device</h2>
             <input type="hidden" id="deviceIdToReserve">
             <div class="mb-6">
-                <label for="initialsInput" class="block text-sm font-medium text-neutral-700 mb-1">Your Initials (max 5
-                    chars):</label>
-                <input type="text" id="initialsInput" maxlength="5"
-                    class="w-full p-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                    placeholder="e.g., JD">
+                <label for="initialsInput" class="block text-sm font-medium text-neutral-700 mb-1">Your Initials (max 5 chars):</label>
+                <input type="text" id="initialsInput" maxlength="5" class="w-full p-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="e.g., JD">
             </div>
-            <div class="modal-message-area text-sm mb-3"></div>
+            <div class="modal-message-area text-sm mb-3 text-center"></div>
             <div class="flex justify-end space-x-4">
-                <button id="cancelReservationButton"
-                    class="px-6 py-2 text-neutral-700 bg-neutral-200 hover:bg-neutral-300 rounded-lg font-medium transition">Cancel</button>
-                <button id="confirmReservationButton"
-                    class="px-6 py-2 bg-primary hover:bg-blue-700 text-white rounded-lg font-semibold transition">Confirm
-                    Reservation</button>
+                <button id="cancelReservationButton" class="px-6 py-2 text-neutral-700 bg-neutral-200 hover:bg-neutral-300 rounded-lg font-medium transition">Cancel</button>
+                <button id="confirmReservationButton" class="px-6 py-2 bg-primary hover:bg-blue-700 text-white rounded-lg font-semibold transition">Confirm Reservation</button>
             </div>
         </div>
     </div>
 
-    <div id="addDeviceModal"
-        class="modal fixed inset-0 bg-gray-800 bg-opacity-75 items-center justify-center p-4 z-50 overflow-y-auto">
+    <div id="addDeviceModal" class="modal fixed inset-0 bg-gray-800 bg-opacity-75 items-center justify-center p-4 z-50 overflow-y-auto">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg transform transition-all my-8">
             <h2 class="text-2xl font-semibold text-secondary mb-6">Add New Device</h2>
             <div class="space-y-4">
-                <div>
-                    <label for="newDeviceName" class="block text-sm font-medium text-neutral-700 mb-1">Device Name <span
-                            class="text-red-500">*</span></label>
-                    <input type="text" id="newDeviceName"
-                        class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent"
-                        placeholder="e.g., FMC920">
-                </div>
-                <div>
-                    <label for="newDeviceCategory"
-                        class="block text-sm font-medium text-neutral-700 mb-1">Category <span class="text-red-500">*</span></label>
-                    <input type="text" id="newDeviceCategory"
-                        class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent"
-                        placeholder="e.g., FMx9 Devices">
-                </div>
-                <div>
-                    <label for="newDeviceIMEI" class="block text-sm font-medium text-neutral-700 mb-1">IMEI (or Serial
-                        Number)</label>
-                    <input type="text" id="newDeviceIMEI"
-                        class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent"
-                        placeholder="e.g., 123456789012345">
-                </div>
-                <div>
-                    <label for="newDeviceIndex" class="block text-sm font-medium text-neutral-700 mb-1">Index <span class="text-red-500">*</span></label>
-                    <input type="number" id="newDeviceIndex"
-                        class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent"
-                        placeholder="e.g., 1" min="0" step="1" required>
-                </div>
-                <div>
-                    <label for="newDeviceNotes" class="block text-sm font-medium text-neutral-700 mb-1">Notes</label>
-                    <textarea id="newDeviceNotes" rows="3"
-                        class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent"
-                        placeholder="Additional notes, such as Ext. Modem type."></textarea>
-                </div>
+                <div><label for="newDeviceName" class="block text-sm font-medium text-neutral-700 mb-1">Device Name <span class="text-red-500">*</span></label><input type="text" id="newDeviceName" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent" placeholder="e.g., FMC920"></div>
+                <div><label for="newDeviceCategory" class="block text-sm font-medium text-neutral-700 mb-1">Category <span class="text-red-500">*</span></label><input type="text" id="newDeviceCategory" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent" placeholder="e.g., FMx9 Devices"></div>
+                <div><label for="newDeviceIMEI" class="block text-sm font-medium text-neutral-700 mb-1">IMEI</label><input type="text" id="newDeviceIMEI" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent" placeholder="e.g., 123456789012345"></div>
+                <div><label for="newDeviceIndex" class="block text-sm font-medium text-neutral-700 mb-1">Index <span class="text-red-500">*</span></label><input type="number" id="newDeviceIndex" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent" placeholder="e.g., 1" min="0" step="1" required></div>
+                <div><label for="newDeviceNotes" class="block text-sm font-medium text-neutral-700 mb-1">Notes</label><textarea id="newDeviceNotes" rows="3" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent" placeholder="Additional notes..."></textarea></div>
             </div>
-            <div class="modal-message-area text-sm mt-4 mb-3"></div>
+            <div class="modal-message-area text-sm mt-4 mb-3 text-center"></div>
             <div class="flex justify-end space-x-4 mt-6">
-                <button id="cancelAddDeviceButton"
-                    class="px-6 py-2 text-neutral-700 bg-neutral-200 hover:bg-neutral-300 rounded-lg font-medium transition">Cancel</button>
-                <button id="confirmAddDeviceButton"
-                    class="px-6 py-2 bg-secondary hover:bg-emerald-600 text-white rounded-lg font-semibold transition">Add
-                    Device</button>
+                <button id="cancelAddDeviceButton" class="px-6 py-2 text-neutral-700 bg-neutral-200 hover:bg-neutral-300 rounded-lg font-medium transition">Cancel</button>
+                <button id="confirmAddDeviceButton" class="px-6 py-2 bg-secondary hover:bg-emerald-600 text-white rounded-lg font-semibold transition">Add Device</button>
             </div>
         </div>
     </div>
 
-    <div id="editDeviceModal"
-        class="modal fixed inset-0 bg-gray-800 bg-opacity-75 items-center justify-center p-4 z-50 overflow-y-auto">
+    <div id="editDeviceModal" class="modal fixed inset-0 bg-gray-800 bg-opacity-75 items-center justify-center p-4 z-50 overflow-y-auto">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg transform transition-all my-8">
             <h2 class="text-2xl font-semibold text-neutral-700 mb-6">Edit Device</h2>
             <input type="hidden" id="editDeviceId">
             <div class="space-y-4">
-                <div>
-                    <label for="editDeviceName" class="block text-sm font-medium text-neutral-700 mb-1">Device Name <span
-                            class="text-red-500">*</span></label>
-                    <input type="text" id="editDeviceName"
-                        class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                        placeholder="e.g., FMC920">
-                </div>
-                <div>
-                    <label for="editDeviceCategory"
-                        class="block text-sm font-medium text-neutral-700 mb-1">Category <span class="text-red-500">*</span></label>
-                    <input type="text" id="editDeviceCategory"
-                        class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                        placeholder="e.g., FMx9 Devices">
-                </div>
-                <div>
-                    <label for="editDeviceIMEI" class="block text-sm font-medium text-neutral-700 mb-1">IMEI (or Serial
-                        Number)</label>
-                    <input type="text" id="editDeviceIMEI"
-                        class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                        placeholder="e.g., 123456789012345">
-                </div>
-                <div>
-                    <label for="editDeviceIndex" class="block text-sm font-medium text-neutral-700 mb-1">Index <span class="text-red-500">*</span></label>
-                    <input type="number" id="editDeviceIndex"
-                        class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                        placeholder="e.g., 1" min="0" step="1" required>
-                </div>
-                <div>
-                    <label for="editDeviceNotes" class="block text-sm font-medium text-neutral-700 mb-1">Notes</label>
-                    <textarea id="editDeviceNotes" rows="3"
-                        class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                        placeholder="Additional notes, such as Ext. Modem type."></textarea>
-                </div>
+                <div><label for="editDeviceName" class="block text-sm font-medium text-neutral-700 mb-1">Device Name <span class="text-red-500">*</span></label><input type="text" id="editDeviceName" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"></div>
+                <div><label for="editDeviceCategory" class="block text-sm font-medium text-neutral-700 mb-1">Category <span class="text-red-500">*</span></label><input type="text" id="editDeviceCategory" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"></div>
+                <div><label for="editDeviceIMEI" class="block text-sm font-medium text-neutral-700 mb-1">IMEI</label><input type="text" id="editDeviceIMEI" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"></div>
+                <div><label for="editDeviceIndex" class="block text-sm font-medium text-neutral-700 mb-1">Index <span class="text-red-500">*</span></label><input type="number" id="editDeviceIndex" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" min="0" step="1" required></div>
+                <div><label for="editDeviceNotes" class="block text-sm font-medium text-neutral-700 mb-1">Notes</label><textarea id="editDeviceNotes" rows="3" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"></textarea></div>
             </div>
-            <div class="modal-message-area text-sm mt-4 mb-3"></div>
+            <div class="modal-message-area text-sm mt-4 mb-3 text-center"></div>
             <div class="flex justify-end space-x-4 mt-6">
-                <button id="cancelEditDeviceButton"
-                    class="px-6 py-2 text-neutral-700 bg-neutral-200 hover:bg-neutral-300 rounded-lg font-medium transition">Cancel</button>
-                <button id="confirmEditDeviceButton"
-                    class="px-6 py-2 bg-primary hover:bg-blue-700 text-white rounded-lg font-semibold transition">Save
-                    Changes</button>
+                <button id="cancelEditDeviceButton" class="px-6 py-2 text-neutral-700 bg-neutral-200 hover:bg-neutral-300 rounded-lg font-medium transition">Cancel</button>
+                <button id="confirmEditDeviceButton" class="px-6 py-2 bg-primary hover:bg-blue-700 text-white rounded-lg font-semibold transition">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="addTeamMemberModal" class="modal fixed inset-0 bg-gray-800 bg-opacity-75 items-center justify-center p-4 z-50">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md transform transition-all">
+            <h2 class="text-2xl font-semibold text-accent mb-6">Add Team Member</h2>
+            <div class="mb-6">
+                <label for="newTeamMemberUid" class="block text-sm font-medium text-neutral-700 mb-1">New Member's User ID (UID):</label>
+                <input type="text" id="newTeamMemberUid" class="w-full p-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent" placeholder="Enter Firebase User ID">
+            </div>
+            <div class="modal-message-area text-sm mb-3 text-center"></div>
+            <div class="flex justify-end space-x-4">
+                <button id="cancelAddTeamMemberButton" class="px-6 py-2 text-neutral-700 bg-neutral-200 hover:bg-neutral-300 rounded-lg font-medium transition">Cancel</button>
+                <button id="confirmAddTeamMemberButton" class="px-6 py-2 bg-accent hover:bg-yellow-500 text-white rounded-lg font-semibold transition">Add Team Member</button>
             </div>
         </div>
     </div>
@@ -928,10 +744,20 @@
     <div id="messageModal" class="modal fixed inset-0 bg-gray-800 bg-opacity-75 items-center justify-center p-4 z-50">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-center transform transition-all">
             <p id="messageText" class="text-lg mb-6">Message goes here.</p>
-            <button id="closeMessageButton"
-                class="px-8 py-2 bg-primary hover:bg-blue-700 text-white rounded-lg font-semibold transition">OK</button>
+            <button id="closeMessageButton" class="px-8 py-2 bg-primary hover:bg-blue-700 text-white rounded-lg font-semibold transition">OK</button>
         </div>
     </div>
-</body>
 
+    <div id="confirmationModal" class="modal fixed inset-0 bg-gray-800 bg-opacity-75 items-center justify-center p-4 z-50">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md transform transition-all">
+            <h2 class="text-xl font-semibold text-neutral-800 mb-4">Confirm Action</h2>
+            <p id="confirmationMessageText" class="text-neutral-700 mb-6">Are you sure?</p>
+            <div class="flex justify-end space-x-4">
+                <button id="cancelActionButton" class="px-6 py-2 text-neutral-700 bg-neutral-200 hover:bg-neutral-300 rounded-lg font-medium transition">Cancel</button>
+                <button id="confirmActionButton" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+</body>
 </html>
