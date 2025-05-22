@@ -333,6 +333,10 @@
         }
 
         function generateButtonHtml(device) {
+            // Only team members can reserve or release
+            if (!isTeamMember) {
+                return `<button class="w-full bg-neutral-300 text-neutral-500 font-semibold py-2 px-4 rounded-lg cursor-not-allowed" disabled>Team Only</button>`;
+            }
             if (device.reservedByUserId === currentUserId && currentUserId) {
                 return `<button data-device-id="${device.id}" class="release-btn w-full bg-accent hover:bg-yellow-500 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out">Release</button>`;
             } else if (!device.reservedByInitials) { // Device is available
@@ -417,7 +421,8 @@
         }
 
         function openReservationModal(deviceId) {
-            // No isTeamMember check here, any authenticated user can open
+            // Only team members can reserve
+            if (!isTeamMember) { showMessage("Only team members can reserve devices.", true); return; }
             if (!currentUserId) { showMessage("You must be signed in to reserve a device.", true); return; }
             if (deviceIdToReserveInput) deviceIdToReserveInput.value = deviceId;
             if (initialsInput) initialsInput.value = '';
@@ -428,7 +433,8 @@
         function closeReservationModal() { if (reservationModal) reservationModal.classList.remove('active'); }
 
         async function confirmReservation() {
-            // No isTeamMember check here, relies on security rules
+            // Only team members can reserve
+            if (!isTeamMember) { showMessage("Only team members can reserve devices.", true, true); closeReservationModal(); return; }
             if (!deviceIdToReserveInput || !initialsInput || !confirmReservationButton) return;
             const deviceId = deviceIdToReserveInput.value;
             const initials = initialsInput.value.trim().toUpperCase();
