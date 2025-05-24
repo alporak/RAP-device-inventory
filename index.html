@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,67 +8,99 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
+            darkMode: 'class', // Enable class-based dark mode
             theme: {
                 extend: {
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
                     },
                     colors: {
-                        primary: '#3B82F6', // Blue-500
-                        secondary: '#10B981', // Emerald-500
-                        accent: '#F59E0B', // Amber-500
+                        primary: {
+                            DEFAULT: '#3B82F6', // Blue-500
+                            dark: '#2563EB'    // Blue-600 for dark mode
+                        },
+                        secondary: {
+                            DEFAULT: '#10B981', // Emerald-500
+                            dark: '#059669'     // Emerald-600 for dark mode
+                        },
+                        accent: {
+                            DEFAULT: '#F59E0B', // Amber-500
+                            dark: '#D97706'      // Amber-600 for dark mode
+                        },
                         neutral: {
-                            100: '#F3F4F6', // Gray-100
-                            200: '#E5E7EB', // Gray-200
-                            700: '#374151', // Gray-700
-                            800: '#1F2937', // Gray-800
-                            900: '#111827', // Gray-900
-                        }
+                            50:  '#F9FAFB',
+                            100: '#F3F4F6',
+                            200: '#E5E7EB',
+                            300: '#D1D5DB',
+                            400: '#9CA3AF',
+                            500: '#6B7280',
+                            600: '#4B5563',
+                            700: '#374151',
+                            800: '#1F2937',
+                            900: '#111827',
+                        },
+                        // Explicit dark mode text and background colors
+                        darkbg: '#111827', // neutral-900
+                        darktext: '#F3F4F6', // neutral-100
+                        darkcard: '#1F2937', // neutral-800
+                        darkborder: '#374151', // neutral-700
+                        darkplaceholder: '#6B7280' // neutral-500
                     }
                 }
             }
         }
     </script>
     <style>
+        /* Remove @apply usage and use standard CSS for custom rules */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #F9FAFB; /* Gray-50 */
+            /* Remove @apply, use Tailwind classes in <body> instead */
         }
 
         .modal {
-            display: none; /* Hidden by default */
+            display: none;
         }
-
         .modal.active {
-            display: flex; /* Show when active - Tailwind flex utilities will then apply */
+            display: flex;
         }
 
-        /* Custom scrollbar for better aesthetics */
+        /* Custom scrollbar for better aesthetics in dark mode */
         ::-webkit-scrollbar {
             width: 8px;
         }
-
         ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
+            background: #E5E7EB;
+            border-radius: 0.5rem;
         }
-
+        html.dark ::-webkit-scrollbar-track {
+            background: #374151;
+        }
         ::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 10px;
+            background: #9CA3AF;
+            border-radius: 0.5rem;
         }
-
+        html.dark ::-webkit-scrollbar-thumb {
+            background: #6B7280;
+        }
         ::-webkit-scrollbar-thumb:hover {
-            background: #555;
+            background: #6B7280;
+        }
+        html.dark ::-webkit-scrollbar-thumb:hover {
+            background: #9CA3AF;
         }
 
         .device-card {
             transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            background: #fff;
+            border: 1px solid #E5E7EB;
         }
-
+        html.dark .device-card {
+            background: #1F2937;
+            border-color: #374151;
+        }
         .device-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 25px 0 rgba(0,0,0,0.08);
         }
         .device-card.compact {
             padding: 0.75rem 1rem;
@@ -92,18 +123,118 @@
             font-size: 0.95rem;
         }
         table.min-w-full th, table.min-w-full td {
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid #E5E7EB;
         }
+        html.dark table.min-w-full th, html.dark table.min-w-full td {
+            border-bottom: 1px solid #374151;
+        }
+        .modal > div {
+            background: #fff;
+        }
+        html.dark .modal > div {
+            background: #1F2937;
+        }
+        input[type="text"], input[type="number"], input[type="email"], input[type="password"], textarea, select {
+            background: #fff;
+            border-color: #D1D5DB;
+            color: #111827;
+        }
+        input[type="text"]::placeholder,
+        input[type="number"]::placeholder,
+        textarea::placeholder {
+            color: #6B7280;
+        }
+        html.dark input[type="text"], html.dark input[type="number"], html.dark input[type="email"], html.dark input[type="password"], html.dark textarea, html.dark select {
+            background: #374151;
+            border-color: #4B5563;
+            color: #F3F4F6;
+        }
+        html.dark input[type="text"]::placeholder,
+        html.dark input[type="number"]::placeholder,
+        html.dark textarea::placeholder {
+            color: #6B7280;
+        }
+        .button-neutral {
+            background: #E5E7EB;
+            color: #374151;
+        }
+        .button-neutral:hover {
+            background: #D1D5DB;
+        }
+        html.dark .button-neutral {
+            background: #4B5563;
+            color: #F3F4F6;
+        }
+        html.dark .button-neutral:hover {
+            background: #6B7280;
+        }
+        /* ...existing code for text color utility classes... */
+        .text-primary { color: #3B82F6; }
+        html.dark .text-primary { color: #2563EB; }
+        .text-secondary { color: #10B981; }
+        html.dark .text-secondary { color: #059669; }
+        .text-accent { color: #F59E0B; }
+        html.dark .text-accent { color: #D97706; }
+        .text-neutral-content { color: #374151; }
+        html.dark .text-neutral-content { color: #D1D5DB; }
+        .text-neutral-muted { color: #6B7280; }
+        html.dark .text-neutral-muted { color: #9CA3AF; }
+        .header-title { color: #3B82F6; }
+        html.dark .header-title { color: #2563EB; }
+        .modal-title { color: #3B82F6; }
+        html.dark .modal-title { color: #2563EB; }
+        .modal-title-secondary { color: #10B981; }
+        html.dark .modal-title-secondary { color: #059669; }
+        .modal-title-accent { color: #F59E0B; }
+        html.dark .modal-title-accent { color: #D97706; }
+        .modal-title-neutral { color: #374151; }
+        html.dark .modal-title-neutral { color: #D1D5DB; }
+        .confirmation-title { color: #111827; }
+        html.dark .confirmation-title { color: #F3F4F6; }
+
+        .theme-toggle-emoji {
+            transition: transform 0.3s cubic-bezier(.4,2,.6,1), filter 0.3s cubic-bezier(.4,2,.6,1);
+            display: inline-block;
+        }
+        .theme-toggle-emoji.spin {
+            transform: rotate(180deg) scale(1.2);
+            filter: brightness(1.2);
+        }
+        .splash-container {
+            display: flex;
+            align-items: center;
+            gap: 20px; /* Adjust as needed, original was 40px */
+        }
+
+        /* Make splash animation much faster */
+        @keyframes fadeIn { to { opacity: 1; } }
+        @keyframes slideIn { to { transform: translateX(0); opacity: 1; } }
+        .teltonika { opacity: 0; animation: fadeIn 0.3s forwards; }
+        .telematics { transform: translateX(-100%); opacity: 0; animation: slideIn 0.3s forwards 0.3s; }
     </style>
 </head>
 
-<body class="antialiased text-neutral-800">
-
+<body class="antialiased bg-neutral-50 text-neutral-800 transition-colors duration-300 dark:bg-[#111827] dark:text-[#F3F4F6]">
+    <!-- Splash overlay -->
+    <div id="splash-overlay" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#fff;transition:background 0.3s;">
+        <div id="splash-content">
+            <div class="splash-container">
+                <div class="teltonika">
+                    <!-- Teltonika SVG -->
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="14.957 114.569 353.082 69.236" width="353.082px" height="69.236px"><mask id="mask0_1201_114" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="15" y="114" width="619" height="70"><path d="M633.467 114.569H15V184H633.467V114.569Z" fill="white"/></mask><g id="object-0" transform="matrix(1, 0, 0, 1, 0, 3.552713678800501e-15)"><path d="M217.146 135.539H186.623L183.893 143.784H194.257L186.677 166.927H196.816L204.39 143.784H214.452L217.146 135.539ZM294.198 135.539L283.914 166.911H294.275L304.559 135.539H294.198ZM238.029 148.188C238.287 146.467 238.143 145.169 237.573 144.26C236.902 143.163 235.607 142.606 233.709 142.606C232.575 142.582 231.45 142.803 230.41 143.256C229.371 143.709 228.442 144.382 227.688 145.229C226.431 146.622 225.362 148.627 224.481 151.243C224.32 151.74 224.166 152.25 224.035 152.773C223.9 153.274 223.795 153.782 223.72 154.296C223.452 156.016 223.596 157.314 224.166 158.227C224.837 159.327 226.142 159.88 228.04 159.88C229.163 159.902 230.278 159.68 231.307 159.23C232.337 158.78 233.257 158.113 234.004 157.274C235.303 155.872 236.384 153.86 237.247 151.237C237.591 150.241 237.853 149.219 238.029 148.181M248.001 149.452C247.887 149.868 247.706 150.458 247.427 151.24C245.73 156.332 242.906 160.353 239.005 163.315C235.104 166.277 230.576 167.739 225.427 167.739C221.018 167.739 217.751 166.595 215.626 164.308C213.502 162.02 212.745 158.89 213.356 154.916C213.558 153.67 213.864 152.442 214.271 151.247C215.942 146.249 218.764 142.24 222.737 139.219C226.618 136.244 231.385 134.657 236.275 134.711C240.691 134.711 243.96 135.838 246.082 138.092C248.222 140.339 248.973 143.458 248.363 147.443C248.222 148.379 248.095 149.046 248.001 149.456M344.03 135.539H331.838L317.66 145.92L321.058 135.539H311.039L300.762 166.911H310.76L314.044 156.915L318.26 154.339L322.869 166.911H333.669L334.756 165.384L327.877 147.104L344.03 135.539ZM358.208 156.167L357.893 145.31L350.48 156.16L358.208 156.167ZM357.97 166.901L358.027 162.755H346.288L343.604 166.901H335.353L334.78 165.374L355.991 135.522H366.258L368.039 166.894L357.97 166.901ZM278.084 135.539L273.244 150.324C272.834 151.551 272.523 152.808 272.312 154.084L272.235 154.608L271.691 152.159C271.641 151.824 271.614 151.458 271.584 151.096C271.56 150.761 271.493 150.431 271.386 150.113L266.995 135.539H257.379L247.105 166.911H256.711L261.488 152.209C261.904 150.983 262.218 149.724 262.427 148.446L262.511 147.929C262.645 148.533 262.759 149.1 262.863 149.627C263.172 151.401 263.343 152.333 263.353 152.421L267.807 166.907H277.417L287.701 135.536L278.084 135.539ZM127.56 135.539H97.0132L94.3098 143.784H104.671L97.0836 166.927H107.227L114.797 143.784H124.859L127.56 135.539ZM173.136 135.539H163.01L152.729 166.911H177.55L180.274 158.575H165.586L173.136 135.539ZM48.8072 134.694L40.5325 126.644L18.6734 149.16L40.8545 171.338L48.3645 163.838L34.2535 149.714L34.2736 149.694H34.2535L48.8072 134.694ZM88.118 163.359L98.1805 173.421L88.118 183.483L78.0555 173.421L54.0397 149.399L54.0665 149.375H54.0498L67.9528 135.029L59.8223 127.147L37.9666 149.68L60.1409 171.861L68.3653 163.637L78.4278 173.699L68.3184 183.805L58.4102 173.904L49.0185 183.296L38.956 173.233L14.957 149.207L14.9839 149.177L38.6273 124.796L48.5221 114.569L58.712 124.464L67.8085 115.072L77.8308 124.799L87.6115 114.737L97.8216 124.655L87.9134 134.862L79.6152 126.812L57.7561 149.338L79.9405 171.512L88.118 163.359ZM135.241 154.443L133.664 159.287H150.214L147.725 166.927H121.009L131.286 135.556H157.348L154.889 143.046H138.96L137.619 147.228H151.035L148.667 154.426L135.241 154.443Z" fill="#0658A4" mask="url(#mask0_1201_114)"/></g></svg>
+                </div>
+                <div class="telematics">
+                    <!-- Telematics SVG -->
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="420 136 214 32.0002" width="214px" height="32.0002px"><g id="object-2" transform="matrix(1, 0, 0, 1, 0, 3.552713678800501e-15)"><path d="M429.704 167V141.243H420V136H446V141.243H436.314V167H429.704Z" fill="#0658A4"/><path d="M458.764 154.031C458.718 152.273 458.254 150.94 457.37 150.031C456.962 149.591 456.462 149.241 455.905 149.004C455.347 148.767 454.744 148.649 454.136 148.657C453.5 148.642 452.868 148.764 452.286 149.014C451.704 149.264 451.186 149.636 450.768 150.104C449.884 151.071 449.448 152.383 449.459 154.041L458.764 154.031ZM458.422 160.172L464.626 161.189C463.831 163.412 462.578 165.102 460.868 166.26C459.158 167.418 457.005 167.998 454.409 168C450.31 168 447.282 166.695 445.326 164.086C443.775 161.995 443 159.357 443 156.172C443 152.369 444.025 149.389 446.074 147.23C448.124 145.072 450.702 143.996 453.808 144C457.305 144 460.067 145.128 462.091 147.384C464.115 149.64 465.083 153.096 464.994 157.752H449.398C449.441 159.552 449.943 160.953 450.904 161.956C451.357 162.443 451.912 162.829 452.532 163.088C453.151 163.348 453.82 163.474 454.494 163.459C455.382 163.487 456.252 163.211 456.954 162.679C457.616 162.161 458.117 161.326 458.457 160.172" fill="#0658A4"/><path d="M474 136H468V167H474V136Z" fill="#0658A4"/><path d="M492.784 154.031C492.743 152.274 492.276 150.938 491.391 150.031C490.983 149.591 490.483 149.24 489.925 149.003C489.367 148.767 488.764 148.649 488.156 148.657C487.52 148.642 486.889 148.764 486.307 149.014C485.725 149.264 485.206 149.636 484.788 150.104C483.902 151.071 483.466 152.383 483.48 154.041L492.784 154.031ZM492.443 160.172L498.646 161.189C497.851 163.412 496.592 165.102 494.868 166.26C493.144 167.418 490.991 167.998 488.409 168C484.31 168 481.282 166.695 479.326 164.086C477.775 161.995 477 159.357 477 156.172C477 152.369 478.025 149.389 480.074 147.23C482.124 145.072 484.702 143.996 487.808 144C491.305 144 494.067 145.128 496.091 147.384C498.115 149.64 499.083 153.096 498.994 157.752H483.398C483.443 159.552 483.945 160.953 484.904 161.956C485.357 162.443 485.912 162.829 486.532 163.088C487.151 163.348 487.82 163.474 488.494 163.459C489.382 163.487 490.252 163.211 490.954 162.679C491.616 162.161 492.118 161.326 492.46 160.172" fill="#0658A4"/><path d="M503 144.524H508.624V147.596C510.637 145.202 513.037 144.004 515.824 144.004C517.172 143.967 518.507 144.273 519.696 144.892C520.832 145.527 521.762 146.459 522.381 147.583C523.278 146.478 524.397 145.563 525.669 144.892C526.829 144.304 528.119 143.999 529.427 144.004C530.93 143.956 532.418 144.304 533.735 145.01C534.92 145.69 535.844 146.728 536.369 147.965C536.79 148.925 537 150.477 537 152.621V166.987H530.883V154.146C530.883 151.914 530.673 150.475 530.252 149.826C529.684 148.981 528.814 148.558 527.642 148.556C526.775 148.559 525.931 148.825 525.226 149.317C524.442 149.865 523.867 150.652 523.592 151.553C523.261 152.533 523.094 154.081 523.092 156.199V167H516.979V154.675C516.979 152.487 516.867 151.072 516.643 150.43C516.477 149.862 516.123 149.363 515.636 149.01C515.079 148.672 514.429 148.509 513.774 148.543C512.867 148.531 511.979 148.79 511.227 149.284C510.458 149.801 509.887 150.554 509.607 151.423C509.282 152.356 509.119 153.903 509.117 156.062V166.987H503.003L503 144.524Z" fill="#0658A4"/><path d="M554.562 156.452C553.77 156.709 552.513 157.018 550.789 157.378C549.065 157.738 547.939 158.092 547.413 158.439C547.043 158.666 546.737 158.981 546.525 159.356C546.312 159.73 546.2 160.151 546.198 160.579C546.195 160.993 546.28 161.403 546.448 161.783C546.615 162.163 546.862 162.504 547.172 162.786C547.499 163.095 547.886 163.336 548.311 163.496C548.735 163.655 549.188 163.73 549.642 163.716C550.799 163.703 551.921 163.324 552.84 162.636C553.546 162.148 554.066 161.444 554.32 160.635C554.481 160.118 554.562 159.131 554.562 157.675V156.452ZM546.267 151.528L540.639 150.528C541.269 148.305 542.357 146.663 543.902 145.6C545.446 144.538 547.742 144.004 550.789 144C553.554 144 555.613 144.32 556.968 144.96C558.322 145.6 559.275 146.415 559.826 147.404C560.377 148.391 560.653 150.203 560.653 152.841L560.588 159.935C560.549 161.429 560.648 162.923 560.884 164.399C561.123 165.468 561.498 166.503 562 167.48H555.875C555.712 167.075 555.514 166.477 555.28 165.686C555.178 165.326 555.103 165.086 555.059 164.973C554.077 165.928 552.923 166.698 551.656 167.243C550.435 167.752 549.121 168.009 547.794 168C545.383 168 543.481 167.359 542.088 166.076C541.408 165.456 540.87 164.702 540.51 163.863C540.151 163.023 539.977 162.119 540.002 161.209C539.982 159.988 540.311 158.786 540.952 157.738C541.586 156.722 542.511 155.91 543.612 155.405C544.747 154.865 546.391 154.392 548.546 153.988C551.441 153.455 553.448 152.958 554.569 152.498V151.891C554.569 150.724 554.275 149.892 553.687 149.394C553.1 148.896 551.989 148.647 550.353 148.647C549.251 148.647 548.391 148.861 547.774 149.287C547.157 149.714 546.657 150.46 546.273 151.524" fill="#0658A4"/><path d="M575.523 144.965V149.717H571.536V158.794C571.536 160.631 571.574 161.703 571.649 162.008C571.727 162.315 571.913 162.582 572.17 162.76C572.46 162.964 572.805 163.068 573.157 163.058C573.963 162.995 574.754 162.802 575.5 162.485L576 167.109C574.538 167.722 572.969 168.025 571.389 167.998C570.416 168.014 569.449 167.83 568.546 167.459C567.809 167.18 567.165 166.695 566.685 166.059C566.246 165.357 565.966 164.562 565.866 163.734C565.704 162.341 565.642 160.938 565.68 159.536V149.726H563V144.965H565.68V140.479L571.536 137V144.965H575.523Z" fill="#0658A4"/><path d="M580 144.542H586V167H580V144.542ZM580 136H586V141.484H580V136Z" fill="#0658A4"/><path d="M610.674 151.308L604.306 152.388C604.094 151.192 603.608 150.292 602.849 149.687C602.016 149.057 600.969 148.733 599.902 148.777C599.177 148.749 598.455 148.875 597.789 149.147C597.123 149.418 596.531 149.827 596.056 150.344C595.112 151.391 594.641 153.139 594.641 155.588C594.641 158.313 595.127 160.237 596.098 161.359C596.565 161.91 597.162 162.35 597.841 162.643C598.521 162.937 599.264 163.076 600.011 163.049C601.111 163.086 602.184 162.729 603.015 162.049C603.798 161.382 604.349 160.253 604.667 158.662L611 159.679C610.342 162.419 609.08 164.487 607.214 165.883C605.349 167.279 602.846 167.984 599.707 168C596.143 168 593.302 166.94 591.184 164.82C589.066 162.699 588.005 159.767 588 156.022C588 152.23 589.061 149.279 591.184 147.167C593.307 145.056 596.183 144 599.813 144C602.783 144 605.141 144.601 606.889 145.804C608.637 147.006 609.899 148.841 610.674 151.308Z" fill="#0658A4"/><path d="M612.021 160.915L618.271 159.984C618.462 161.043 619.037 162 619.892 162.679C620.706 163.292 621.845 163.598 623.311 163.595C624.923 163.595 626.134 163.308 626.946 162.732C627.209 162.547 627.421 162.303 627.565 162.02C627.709 161.737 627.779 161.424 627.77 161.108C627.783 160.685 627.623 160.273 627.325 159.964C627.013 159.673 626.318 159.405 625.24 159.161C620.213 158.081 617.022 157.094 615.666 156.2C614.781 155.648 614.059 154.881 613.57 153.975C613.08 153.07 612.84 152.055 612.872 151.032C612.864 150.075 613.077 149.128 613.496 148.262C613.914 147.397 614.527 146.634 615.289 146.031C616.903 144.677 619.403 144 622.788 144C626.009 144 628.403 144.511 629.969 145.534C631.535 146.556 632.614 148.07 633.207 150.075L627.329 151.135C627.123 150.305 626.615 149.575 625.9 149.081C625.195 148.605 624.19 148.368 622.894 148.368C621.253 148.368 620.078 148.59 619.369 149.035C619.152 149.164 618.972 149.345 618.847 149.561C618.723 149.777 618.657 150.021 618.657 150.268C618.66 150.488 618.719 150.703 618.827 150.895C618.936 151.086 619.091 151.249 619.28 151.369C619.841 151.773 621.778 152.343 625.093 153.079C628.407 153.815 630.725 154.715 632.048 155.78C633.347 156.865 633.998 158.372 634 160.301C634 162.408 633.097 164.218 631.292 165.729C629.487 167.241 626.818 167.998 623.287 168C620.08 168 617.54 167.365 615.669 166.096C613.832 164.876 612.524 163.034 612 160.928" fill="#0658A4"/></g></svg>
+                </div>
+            </div>
+        </div>
+    </div>
     <script type="module">
         // IMPORTANT: User's Firebase configuration
         const envFirebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const hardcodedFirebaseConfig = { // Fallback, BE MINDFUL OF PUBLIC EXPOSURE if used
-            apiKey: "AIzaSyDvnfIehUU8oT80-7g-h7di0RXc4DHtE4Y",
+            apiKey: "AIzaSyDvnfIehUU8oT80-7g-h7di0RXc4DHtE4Y", // Replace with your actual config
             authDomain: "rap-stash.firebaseapp.com",
             projectId: "rap-stash",
             storageBucket: "rap-stash.appspot.com",
@@ -114,7 +245,7 @@
         const firebaseConfig = Object.keys(envFirebaseConfig).length > 0 ? envFirebaseConfig : hardcodedFirebaseConfig;
 
         if (Object.keys(firebaseConfig).length === 0) {
-            document.getElementById('app-container').innerHTML = `<div class="text-center p-8"><h1 class="text-2xl font-bold text-red-600">Firebase Configuration Missing</h1><p class="mt-4 text-neutral-700">Please provide your Firebase project configuration.</p></div>`;
+            document.getElementById('app-container').innerHTML = `<div class="text-center p-8"><h1 class="text-2xl font-bold text-red-600">Firebase Configuration Missing</h1><p class="mt-4 text-neutral-content">Please provide your Firebase project configuration.</p></div>`;
             throw new Error("Firebase configuration is missing.");
         }
 
@@ -130,12 +261,13 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const devicesCollectionPath = `artifacts/${appId}/public/data/devices`;
         const devicesCol = collection(db, devicesCollectionPath);
-        const teamMembersCollectionPath = "team_members"; // Root collection
+        const teamMembersCollectionPath = "team_members";
 
         let currentUser = null;
         let currentUserId = null;
-        let allDevices = [];
+        let currentUserInitials = null;
         let isTeamMember = false;
+        let allDevices = [];
 
         let currentCategoryFilter = '';
         let compactMode = true;
@@ -150,6 +282,7 @@
             confirmAddDeviceButton, cancelAddDeviceButton,
             editDeviceModal, editDeviceNameInput, editDeviceCategoryInput, editDeviceIMEIInput,
             editDeviceNotesInput, editDeviceIndexInput, confirmEditDeviceButton, cancelEditDeviceButton, editDeviceIdInput,
+            removeDeviceFromEditModalButton,
             sortCategorySelect, compactToggleButton, veryCompactToggleButton,
             manageTeamButton, addTeamMemberModal, newTeamMemberUidInput, confirmAddTeamMemberButton, cancelAddTeamMemberButton,
             bulkAddDevicesButton, bulkAddDevicesModal, bulkDevicesTextarea, confirmBulkAddDevicesButton, cancelBulkAddDevicesButton;
@@ -187,19 +320,18 @@
             confirmEditDeviceButton = document.getElementById('confirmEditDeviceButton');
             cancelEditDeviceButton = document.getElementById('cancelEditDeviceButton');
             editDeviceIdInput = document.getElementById('editDeviceId');
+            removeDeviceFromEditModalButton = document.getElementById('removeDeviceFromEditModalButton');
 
             sortCategorySelect = document.getElementById('sortCategorySelect');
             compactToggleButton = document.getElementById('compactToggleButton');
             veryCompactToggleButton = document.getElementById('veryCompactToggleButton');
 
-            // Team Management Elements
             manageTeamButton = document.getElementById('manageTeamButton');
             addTeamMemberModal = document.getElementById('addTeamMemberModal');
             newTeamMemberUidInput = document.getElementById('newTeamMemberUid');
             confirmAddTeamMemberButton = document.getElementById('confirmAddTeamMemberButton');
             cancelAddTeamMemberButton = document.getElementById('cancelAddTeamMemberButton');
 
-            // Bulk Add Devices Elements
             bulkAddDevicesButton = document.getElementById('bulkAddDevicesButton');
             bulkAddDevicesModal = document.getElementById('bulkAddDevicesModal');
             bulkDevicesTextarea = document.getElementById('bulkDevicesTextarea');
@@ -210,35 +342,48 @@
         async function checkTeamMembership(userId) {
             if (!userId) {
                 isTeamMember = false;
+                currentUserInitials = null;
                 updateUIAccess();
                 return;
             }
             try {
                 const teamMemberDocRef = doc(db, teamMembersCollectionPath, userId);
                 const teamMemberDocSnap = await getDoc(teamMemberDocRef);
-                isTeamMember = teamMemberDocSnap.exists();
-                console.log(`User ${userId} isTeamMember: ${isTeamMember}`);
+                if (teamMemberDocSnap.exists()) {
+                    const userData = teamMemberDocSnap.data();
+                    currentUserInitials = userData.initials || null;
+                    isTeamMember = true;
+                    console.log(`User ${userId} is a team member. Initials: ${currentUserInitials || 'Not set'}`);
+                } else {
+                    isTeamMember = false;
+                    currentUserInitials = null;
+                    console.log(`User ${userId} is not in the team_members collection.`);
+                }
             } catch (error) {
                 console.error("Error checking team membership:", error);
                 showMessage(`Error checking team status: ${error.message}`, true);
                 isTeamMember = false;
+                currentUserInitials = null;
             }
             updateUIAccess();
         }
 
         function updateUIAccess() {
-            if (addDeviceButton) {
-                addDeviceButton.style.display = isTeamMember ? 'block' : 'none';
+            const displayStyle = isTeamMember ? 'block' : 'none';
+            if (addDeviceButton) addDeviceButton.style.display = displayStyle;
+            if (manageTeamButton) manageTeamButton.style.display = isTeamMember ? 'inline-block' : 'none';
+            if (bulkAddDevicesButton) bulkAddDevicesButton.style.display = displayStyle;
+            
+            // Disable compact toggle if very compact mode (list view) is active
+            if (compactToggleButton) {
+                compactToggleButton.disabled = veryCompactMode;
+                 if(veryCompactMode) {
+                    compactToggleButton.classList.add('opacity-50', 'cursor-not-allowed');
+                 } else {
+                    compactToggleButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                 }
             }
-            if (manageTeamButton) {
-                manageTeamButton.style.display = isTeamMember ? 'inline-block' : 'none';
-            }
-            if (bulkAddDevicesButton) {
-                bulkAddDevicesButton.style.display = isTeamMember ? 'block' : 'none';
-            }
-            if (veryCompactToggleButton) {
-                veryCompactToggleButton.style.display = isTeamMember ? 'inline-block' : 'inline-block';
-            }
+
             filterAndRenderDevices();
         }
 
@@ -252,21 +397,27 @@
                         if (userIdDisplay) userIdDisplay.textContent = `Your User ID: ${currentUserId}`;
                         console.log("User signed in with UID:", currentUserId);
                         await checkTeamMembership(currentUserId);
+                        fetchAndRenderDevices();
                     } else {
                         currentUser = null;
                         currentUserId = null;
+                        currentUserInitials = null;
                         isTeamMember = false;
                         if (userIdDisplay) userIdDisplay.textContent = "User ID: Not signed in";
                         console.log("No user signed in. Attempting to sign in...");
+                        if (deviceContainer) deviceContainer.innerHTML = `<p class="text-neutral-muted col-span-full text-center py-8">Attempting to sign in...</p>`;
+
                         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                            await signInWithCustomToken(auth, __initial_auth_token).catch(err => {
-                                console.error("Custom token sign-in failed, trying anonymous:", err);
-                                return signInAnonymously(auth);
-                            });
+                            try {
+                                await signInWithCustomToken(auth, __initial_auth_token);
+                            } catch (customTokenError) {
+                                console.error("Custom token sign-in failed, trying anonymous:", customTokenError);
+                                await signInAnonymously(auth);
+                            }
                         } else {
                             await signInAnonymously(auth);
                         }
-                        updateUIAccess(); // Update UI for potentially anonymous user
+                        updateUIAccess();
                     }
                 });
             } catch (error) {
@@ -274,148 +425,147 @@
                 showMessage(`Authentication error: ${error.message}`, true);
                 if (userIdDisplay) userIdDisplay.textContent = "User ID: Auth Error";
                 isTeamMember = false;
+                currentUserInitials = null;
                 updateUIAccess();
+                if (deviceContainer) deviceContainer.innerHTML = `<p class="text-red-500 col-span-full text-center py-8">Authentication error. Cannot load devices.</p>`;
             }
         }
 
         function renderDevices(devicesToRender) {
             if (!deviceContainer) return;
             deviceContainer.innerHTML = '';
+
             if (devicesToRender.length === 0) {
-                deviceContainer.innerHTML = `<p class="text-neutral-500 col-span-full text-center py-8">No devices found.</p>`;
+                const searchTerm = searchInput ? searchInput.value : '';
+                let message = "No devices found.";
+                if (searchTerm) message = `No devices match your search for "${searchTerm}".`;
+                else if (currentCategoryFilter) message = `No devices found in the "${currentCategoryFilter}" category.`;
+                deviceContainer.innerHTML = `<p class="text-neutral-muted col-span-full text-center py-8">${message}</p>`;
                 return;
             }
 
             if (veryCompactMode) {
-                // Render as a table
                 let table = document.createElement('table');
-                table.className = "min-w-full text-xs border border-neutral-200 bg-white rounded-xl overflow-hidden";
+                table.className = "min-w-full text-xs border border-neutral-300 dark:border-darkborder bg-white dark:bg-darkcard rounded-xl overflow-hidden";
                 let thead = document.createElement('thead');
-                thead.innerHTML = `<tr class="bg-neutral-100">
-                    <th class="px-2 py-1 text-left">#</th>
-                    <th class="px-2 py-1 text-left">Name</th>
-                    <th class="px-2 py-1 text-left">Category</th>
-                    <th class="px-2 py-1 text-left">IMEI</th>
-                    <th class="px-2 py-1 text-left">Notes</th>
-                    <th class="px-2 py-1 text-left">Status</th>
-                    <th class="px-2 py-1 text-left">Actions</th>
+                thead.innerHTML = `<tr class="bg-neutral-100 dark:bg-neutral-700">
+                    <th class="px-2 py-1 text-left text-neutral-content">#</th>
+                    <th class="px-2 py-1 text-left text-neutral-content">Name</th>
+                    <th class="px-2 py-1 text-left text-neutral-content">Category</th>
+                    <th class="px-2 py-1 text-left text-neutral-content">IMEI</th>
+                    <th class="px-2 py-1 text-left text-neutral-content">Notes</th>
+                    <th class="px-2 py-1 text-left text-neutral-content">Status</th>
+                    <th class="px-2 py-1 text-left text-neutral-content">Actions</th>
                 </tr>`;
                 table.appendChild(thead);
                 let tbody = document.createElement('tbody');
                 devicesToRender.forEach(device => {
                     let status = device.reservedByInitials
-                        ? `<span class="text-red-600 font-semibold">Reserved: ${device.reservedByInitials}</span>`
-                        : `<span class="text-green-600 font-semibold">Available</span>`;
-                    let actions = generateButtonHtml(device);
+                        ? `<span class="text-red-500 font-semibold">Reserved: ${device.reservedByInitials}</span>`
+                        : `<span class="text-green-500 font-semibold">Available</span>`;
+
+                    let actionsHtml = generateButtonHtml(device);
                     if (isTeamMember) {
-                        actions += `<button data-device-id="${device.id}" class="edit-btn bg-neutral-400 hover:bg-neutral-600 text-white font-semibold px-2 py-1 rounded-lg text-xs ml-1">Edit</button>`;
-                        actions += `<button data-device-id="${device.id}" class="remove-btn bg-red-500 hover:bg-red-700 text-white font-semibold px-2 py-1 rounded-lg text-xs ml-1">Remove</button>`;
+                        actionsHtml += `<button data-device-id="${device.id}" class="edit-btn bg-neutral-500 hover:bg-neutral-600 text-white font-semibold px-2 py-1 rounded-lg text-xs ml-1">Edit</button>`;
                     }
+
                     let tr = document.createElement('tr');
+                    tr.className = "hover:bg-neutral-50 dark:hover:bg-neutral-700";
                     tr.innerHTML = `
-                        <td class="px-2 py-1">${device.index !== undefined ? device.index : ''}</td>
-                        <td class="px-2 py-1">${device.name || ''}</td>
-                        <td class="px-2 py-1">${device.category || ''}</td>
-                        <td class="px-2 py-1">${device.imei || ''}</td>
-                        <td class="px-2 py-1">${device.notes || ''}</td>
+                        <td class="px-2 py-1 text-neutral-content">${device.index !== undefined ? device.index : ''}</td>
+                        <td class="px-2 py-1 text-neutral-content">${device.name || ''}</td>
+                        <td class="px-2 py-1 text-neutral-content">${device.category || ''}</td>
+                        <td class="px-2 py-1 text-neutral-content">${device.imei || ''}</td>
+                        <td class="px-2 py-1 text-neutral-content">${device.notes || ''}</td>
                         <td class="px-2 py-1">${status}</td>
-                        <td class="px-2 py-1">${actions}</td>
+                        <td class="px-2 py-1 flex gap-1">${actionsHtml}</td>
                     `;
                     tbody.appendChild(tr);
                 });
                 table.appendChild(tbody);
                 deviceContainer.appendChild(table);
+            } else {
+                devicesToRender.forEach(device => {
+                    const deviceCard = document.createElement('div');
+                    deviceCard.className = `device-card p-6 rounded-xl shadow-lg flex flex-col justify-between${compactMode ? ' compact' : ''}`;
+                    deviceCard.style.cursor = compactMode ? 'pointer' : 'default';
 
-                // Attach actions
-                document.querySelectorAll('.reserve-btn').forEach(button => button.addEventListener('click', (e) => { e.stopPropagation(); openReservationModal(button.dataset.deviceId); }));
-                document.querySelectorAll('.release-btn').forEach(button => button.addEventListener('click', (e) => { e.stopPropagation(); releaseDevice(button.dataset.deviceId); }));
-                if (isTeamMember) {
-                    document.querySelectorAll('.remove-btn').forEach(button => button.addEventListener('click', (e) => { e.stopPropagation(); removeDevice(button.dataset.deviceId); }));
-                    document.querySelectorAll('.edit-btn').forEach(button => button.addEventListener('click', (e) => { e.stopPropagation(); openEditDeviceModal(button.dataset.deviceId); }));
-                }
-                return;
-            }
-
-            devicesToRender.forEach(device => {
-                const deviceCard = document.createElement('div');
-                deviceCard.className = `device-card bg-white p-6 rounded-xl shadow-lg border border-neutral-200 flex flex-col justify-between${compactMode ? ' compact' : ''}`;
-                deviceCard.style.cursor = compactMode ? 'pointer' : 'default'; // Clickable in compact mode to show actions
-
-                let notesHtml = device.notes && device.notes.trim() ? `<p class="text-sm text-neutral-700 mb-2"><strong>Notes:</strong> ${device.notes}</p>` : '<p class="text-sm text-neutral-500 mb-2">No notes.</p>';
-                let reservationStatusHtml = '';
-                if (device.reservedByInitials) {
-                    const reservationDate = device.reservationDate?.toDate ? device.reservationDate.toDate().toLocaleDateString() : (device.reservationDate ? new Date(device.reservationDate).toLocaleDateString() : 'N/A');
-                    reservationStatusHtml = `<p class="text-sm font-semibold text-red-600">Reserved by: ${device.reservedByInitials}</p><p class="text-xs text-red-500">On: ${reservationDate}</p>`;
-                } else {
-                    reservationStatusHtml = `<p class="text-sm font-semibold text-green-600">Available</p>`;
-                }
-
-                const reserveOrReleaseOrStatusBtn = generateButtonHtml(device);
-                let actionButtonsHtml = '';
-
-                if (!compactMode) {
-                    actionButtonsHtml = reserveOrReleaseOrStatusBtn;
-                    if (isTeamMember) {
-                        actionButtonsHtml += `<button data-device-id="${device.id}" class="edit-btn w-full bg-neutral-400 hover:bg-neutral-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out mt-2">Edit</button>`;
-                        actionButtonsHtml += `<button data-device-id="${device.id}" class="remove-btn w-full bg-red-500 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out mt-2">Remove</button>`;
+                    let notesHtml = device.notes && device.notes.trim() ? `<p class="text-sm text-neutral-content mb-2"><strong>Notes:</strong> ${device.notes}</p>` : '<p class="text-sm text-neutral-muted mb-2">No notes.</p>';
+                    let reservationStatusHtml = '';
+                    if (device.reservedByInitials) {
+                        const reservationDate = device.reservationDate?.toDate ? device.reservationDate.toDate().toLocaleDateString() : (device.reservationDate ? new Date(device.reservationDate).toLocaleDateString() : 'N/A');
+                        reservationStatusHtml = `<p class="text-sm font-semibold text-red-500">Reserved by: ${device.reservedByInitials}</p><p class="text-xs text-red-400">On: ${reservationDate}</p>`;
+                    } else {
+                        reservationStatusHtml = `<p class="text-sm font-semibold text-green-500">Available</p>`;
                     }
-                } else {
-                    let compactActionsContent = reserveOrReleaseOrStatusBtn;
-                     if (isTeamMember) {
-                        compactActionsContent += `<button data-device-id="${device.id}" class="edit-btn w-full bg-neutral-400 hover:bg-neutral-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out mt-2">Edit</button>`;
-                        compactActionsContent += `<button data-device-id="${device.id}" class="remove-btn w-full bg-red-500 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out mt-2">Remove</button>`;
-                    }
-                    actionButtonsHtml = `<div class="compact-actions hidden">${compactActionsContent}</div>`;
-                }
 
-                deviceCard.innerHTML = `
-                    <div>
-                        <div class="flex items-center mb-1">
-                            <span class="text-xs font-bold text-accent bg-neutral-100 rounded px-2 py-0.5 mr-2">#${device.index !== undefined ? device.index : 'N/A'}</span>
-                            <h3 class="text-xl font-semibold text-primary mb-0">${device.name || 'N/A'}</h3>
+                    const mainActionBtnHtml = generateButtonHtml(device);
+                    let actionButtonsHtml = '';
+
+                    if (!compactMode) {
+                        actionButtonsHtml = mainActionBtnHtml;
+                        if (isTeamMember) {
+                            actionButtonsHtml += `<button data-device-id="${device.id}" class="edit-btn w-full bg-neutral-500 hover:bg-neutral-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out mt-2">Edit</button>`;
+                        }
+                    } else {
+                        let compactActionsContent = mainActionBtnHtml;
+                        if (isTeamMember) {
+                            compactActionsContent += `<button data-device-id="${device.id}" class="edit-btn w-full bg-neutral-500 hover:bg-neutral-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out mt-2">Edit</button>`;
+                        }
+                        actionButtonsHtml = `<div class="compact-actions hidden">${compactActionsContent}</div>`;
+                    }
+
+                    deviceCard.innerHTML = `
+                        <div>
+                            <div class="flex items-center mb-1">
+                                <span class="text-xs font-bold text-accent dark:text-accent-dark bg-neutral-100 dark:bg-neutral-700 rounded px-2 py-0.5 mr-2">#${device.index !== undefined ? device.index : 'N/A'}</span>
+                                <h3 class="text-xl font-semibold text-primary mb-0">${device.name || 'N/A'}</h3>
+                            </div>
+                            <p class="text-xs text-neutral-muted uppercase tracking-wider mb-2">${device.category || 'Uncategorized'}</p>
+                            <p class="text-sm text-neutral-content mb-1"><strong class="font-medium">IMEI:</strong> ${device.imei || 'N/A'}</p>
+                            ${notesHtml}
+                            ${reservationStatusHtml}
                         </div>
-                        <p class="text-xs text-neutral-500 uppercase tracking-wider mb-2">${device.category || 'Uncategorized'}</p>
-                        <p class="text-sm text-neutral-700 mb-1"><strong class="font-medium">IMEI:</strong> ${device.imei || 'N/A'}</p>
-                        ${notesHtml}
-                        ${reservationStatusHtml}
-                    </div>
-                    <div class="mt-4 flex flex-col gap-2">
-                        ${actionButtonsHtml}
-                    </div>`;
-                deviceContainer.appendChild(deviceCard);
+                        <div class="mt-4 flex flex-col gap-2">
+                            ${actionButtonsHtml}
+                        </div>`;
+                    deviceContainer.appendChild(deviceCard);
 
-                if (compactMode) { // Add click listener to card if in compact mode for anyone
-                    deviceCard.addEventListener('click', function (e) {
-                        if (e.target.closest('button')) return;
-                        const actions = deviceCard.querySelector('.compact-actions');
-                        if (actions) actions.classList.toggle('hidden');
-                    });
-                }
-            });
+                    if (compactMode) {
+                        deviceCard.addEventListener('click', function (e) {
+                            if (e.target.closest('button')) return;
+                            const actions = deviceCard.querySelector('.compact-actions');
+                            if (actions) actions.classList.toggle('hidden');
+                        });
+                    }
+                });
+            }
 
             document.querySelectorAll('.reserve-btn').forEach(button => button.addEventListener('click', (e) => { e.stopPropagation(); openReservationModal(button.dataset.deviceId); }));
             document.querySelectorAll('.release-btn').forEach(button => button.addEventListener('click', (e) => { e.stopPropagation(); releaseDevice(button.dataset.deviceId); }));
-            if (isTeamMember) { // Only attach these if user is a team member, as buttons won't exist otherwise
-                document.querySelectorAll('.remove-btn').forEach(button => button.addEventListener('click', (e) => { e.stopPropagation(); removeDevice(button.dataset.deviceId); }));
+            if (isTeamMember) {
                 document.querySelectorAll('.edit-btn').forEach(button => button.addEventListener('click', (e) => { e.stopPropagation(); openEditDeviceModal(button.dataset.deviceId); }));
             }
         }
 
         function generateButtonHtml(device) {
-            // Only team members can reserve or release
-            if (!isTeamMember) {
-                return `<button class="w-full bg-neutral-300 text-neutral-500 font-semibold py-2 px-4 rounded-lg cursor-not-allowed" disabled>Team Only</button>`;
+            if (!isTeamMember && !device.reservedByInitials) {
+                 return `<button class="w-full bg-neutral-300 dark:bg-neutral-600 text-neutral-500 dark:text-neutral-400 font-semibold py-2 px-4 rounded-lg cursor-not-allowed" disabled>Team Only to Reserve</button>`;
             }
+             if (!isTeamMember && device.reservedByInitials) {
+                 return `<button class="w-full bg-neutral-300 dark:bg-neutral-600 text-neutral-500 dark:text-neutral-400 font-semibold py-2 px-4 rounded-lg cursor-not-allowed" disabled>Reserved by ${device.reservedByInitials}</button>`;
+            }
+
             if (device.reservedByUserId === currentUserId && currentUserId) {
-                return `<button data-device-id="${device.id}" class="release-btn w-full bg-accent hover:bg-yellow-500 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out">Release</button>`;
-            } else if (!device.reservedByInitials) { // Device is available
-                if (currentUserId) { // Any authenticated user can attempt to reserve
-                    return `<button data-device-id="${device.id}" class="reserve-btn w-full bg-primary hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out">Reserve</button>`;
-                } else { // User not authenticated
-                    return `<button class="w-full bg-neutral-300 text-neutral-500 font-semibold py-2 px-4 rounded-lg cursor-not-allowed" disabled>Sign in to Reserve</button>`;
+                return `<button data-device-id="${device.id}" class="release-btn w-full bg-accent hover:bg-yellow-600 dark:bg-accent-dark dark:hover:bg-yellow-500 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out">Release</button>`;
+            } else if (!device.reservedByInitials) {
+                if (currentUserId) {
+                    return `<button data-device-id="${device.id}" class="reserve-btn w-full bg-primary hover:bg-blue-700 dark:bg-primary-dark dark:hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out">Reserve</button>`;
+                } else {
+                    return `<button class="w-full bg-neutral-300 dark:bg-neutral-600 text-neutral-500 dark:text-neutral-400 font-semibold py-2 px-4 rounded-lg cursor-not-allowed" disabled>Sign in to Reserve</button>`;
                 }
-            } else { // Device is reserved by someone else
-                return `<button class="w-full bg-neutral-300 text-neutral-500 font-semibold py-2 px-4 rounded-lg cursor-not-allowed" disabled>Reserved by ${device.reservedByInitials}</button>`;
+            } else {
+                return `<button class="w-full bg-neutral-300 dark:bg-neutral-600 text-neutral-500 dark:text-neutral-400 font-semibold py-2 px-4 rounded-lg cursor-not-allowed" disabled>Reserved by ${device.reservedByInitials}</button>`;
             }
         }
 
@@ -432,10 +582,9 @@
         }
 
         function filterAndRenderDevices() {
-            if (!searchInput || !deviceContainer) return;
-            const searchTerm = searchInput.value.toLowerCase();
+            if (!deviceContainer) return;
+            const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
             let filteredDevices = allDevices.filter(device => {
-                // Support #number search for index
                 if (searchTerm.startsWith('#')) {
                     const idx = searchTerm.slice(1).trim();
                     return device.index !== undefined && String(device.index).includes(idx);
@@ -454,6 +603,7 @@
         }
 
         function toggleCompactMode() {
+            if(veryCompactMode) return; // Do nothing if in list view
             compactMode = !compactMode;
             if (compactToggleButton) compactToggleButton.textContent = compactMode ? "Expand Actions" : "Compact View";
             filterAndRenderDevices();
@@ -461,74 +611,105 @@
 
         function toggleVeryCompactMode() {
             veryCompactMode = !veryCompactMode;
-            if (veryCompactToggleButton) veryCompactToggleButton.textContent = veryCompactMode ? "Normal View" : "List View";
-            filterAndRenderDevices();
+            if (veryCompactToggleButton) {
+                veryCompactToggleButton.textContent = veryCompactMode ? "Card View" : "List View";
+            }
+            // When switching to list view, ensure compact mode is reset to its default (true)
+            // so that if user switches back to card view, it's compact.
+            if (veryCompactMode) {
+                compactMode = true; // Reset to default compact for cards
+                if (compactToggleButton) compactToggleButton.textContent = "Expand Actions";
+            }
+            updateUIAccess(); // This will handle disabling/enabling compactToggleButton and re-render
         }
 
         async function removeDevice(deviceId) {
-            // Guarded by isTeamMember check before calling (event listener attachment)
-            if (!isTeamMember) { showMessage("Permission denied.", true); return; } // Double check
-            if (!deviceId || !currentUserId) { showMessage("Error: Missing ID or user.", true); return; }
+            if (!isTeamMember) { showMessage("Permission denied. Only team members can remove devices.", true); return false; }
+            if (!deviceId || !currentUserId) { showMessage("Error: Missing device ID or user information.", true); return false; }
+
             const confirmed = await showConfirmationModal("Are you sure you want to remove this device? This action cannot be undone.");
-            if (!confirmed) return;
+            if (!confirmed) return false;
+
             try {
                 await deleteDoc(doc(db, devicesCollectionPath, deviceId));
                 showMessage("Device removed successfully!");
+                return true;
             } catch (error) {
                 console.error("Error removing device: ", error);
                 showMessage(`Error removing device: ${error.message}`, true);
+                return false;
             }
         }
 
         async function fetchAndRenderDevices() {
-            if (!currentUserId && !auth.currentUser) {
-                console.log("User not authenticated, cannot fetch devices yet.");
+            if (!currentUserId) {
+                console.log("User not authenticated, cannot fetch devices yet. CurrentUserID:", currentUserId);
                 if (loadingIndicator) loadingIndicator.style.display = 'none';
-                if (deviceContainer && deviceContainer.innerHTML === '') deviceContainer.innerHTML = `<p class="text-neutral-500 col-span-full text-center py-8">Sign in to view devices.</p>`;
+                if (deviceContainer && deviceContainer.innerHTML.trim() === '') {
+                     deviceContainer.innerHTML = `<p class="text-neutral-muted col-span-full text-center py-8">Authenticating and loading user profile... Please wait.</p>`;
+                }
                 return;
             }
+
             if (loadingIndicator) loadingIndicator.style.display = 'flex';
             onSnapshot(devicesCol, (snapshot) => {
                 allDevices = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                allDevices.sort((a, b) => (a.index || 0) - (b.index || 0));
                 populateCategoryDropdown();
-                filterAndRenderDevices();
+                filterAndRenderDevices(); // This will call renderDevices
                 console.log("Fetched/Updated devices:", allDevices.length);
                 if (loadingIndicator) loadingIndicator.style.display = 'none';
             }, (error) => {
                 console.error("Error fetching devices: ", error);
                 showMessage(`Error fetching devices: ${error.message}`, true);
                 if (loadingIndicator) loadingIndicator.style.display = 'none';
-                if (deviceContainer) deviceContainer.innerHTML = `<p class="text-red-500 col-span-full text-center py-8">Error loading devices.</p>`;
+                if (deviceContainer) deviceContainer.innerHTML = `<p class="text-red-500 col-span-full text-center py-8">Error loading devices. Please try refreshing.</p>`;
             });
         }
 
         function openReservationModal(deviceId) {
-            // Only team members can reserve
             if (!isTeamMember) { showMessage("Only team members can reserve devices.", true); return; }
             if (!currentUserId) { showMessage("You must be signed in to reserve a device.", true); return; }
+
             if (deviceIdToReserveInput) deviceIdToReserveInput.value = deviceId;
-            if (initialsInput) initialsInput.value = '';
+            if (initialsInput) {
+                if (currentUserInitials) {
+                    initialsInput.value = currentUserInitials;
+                    initialsInput.readOnly = true;
+                } else {
+                    initialsInput.value = '';
+                    initialsInput.readOnly = false;
+                }
+            }
             if (reservationModal) reservationModal.classList.add('active');
-            if (initialsInput) initialsInput.focus();
+            if (initialsInput && !initialsInput.readOnly) initialsInput.focus();
         }
 
         function closeReservationModal() { if (reservationModal) reservationModal.classList.remove('active'); }
 
         async function confirmReservation() {
-            // Only team members can reserve
             if (!isTeamMember) { showMessage("Only team members can reserve devices.", true, true); closeReservationModal(); return; }
             if (!deviceIdToReserveInput || !initialsInput || !confirmReservationButton) return;
+
             const deviceId = deviceIdToReserveInput.value;
             const initials = initialsInput.value.trim().toUpperCase();
+
             if (!initials) { showMessage("Please enter your initials.", true, true); return; }
-            if (initials.length > 5) { showMessage("Initials max 5 chars.", true, true); return; }
-            if (!deviceId || !currentUserId) { showMessage("Error: Missing ID or user.", true, true); closeReservationModal(); return; }
+            if (initials.length > 5) { showMessage("Initials can be a maximum of 5 characters.", true, true); return; }
+            if (!deviceId || !currentUserId) { showMessage("Error: Missing device ID or user information.", true, true); closeReservationModal(); return; }
 
             confirmReservationButton.disabled = true; confirmReservationButton.textContent = 'Reserving...';
             try {
                 await updateDoc(doc(db, devicesCollectionPath, deviceId), {
                     reservedByInitials: initials, reservedByUserId: currentUserId, reservationDate: Timestamp.now()
                 });
+
+                if (!initialsInput.readOnly && (initials !== currentUserInitials || !currentUserInitials) ) {
+                    const userDocRef = doc(db, teamMembersCollectionPath, currentUserId);
+                    await setDoc(userDocRef, { initials: initials }, { merge: true });
+                    currentUserInitials = initials;
+                    console.log(`Initials for user ${currentUserId} set/updated to ${initials}.`);
+                }
                 showMessage("Device reserved successfully!");
                 closeReservationModal();
             } catch (error) {
@@ -544,7 +725,6 @@
             if (!deviceId || !currentUserId) { showMessage("Error: Missing ID or user.", true); return; }
             try {
                 const deviceRef = doc(db, devicesCollectionPath, deviceId);
-                // Any team member can release, no need to check who reserved
                 await updateDoc(deviceRef, { reservedByInitials: null, reservedByUserId: null, reservationDate: null });
                 showMessage("Device released successfully!");
             } catch (error) {
@@ -553,9 +733,8 @@
             }
         }
 
-        // --- Add/Edit Device Logic (Team Members Only) ---
         function openAddDeviceModal() {
-            if (!isTeamMember) { showMessage("Permission denied.", true); return; }
+            if (!isTeamMember) { showMessage("Permission denied. Only team members can add devices.", true); return; }
             if (newDeviceNameInput) newDeviceNameInput.value = '';
             if (newDeviceCategoryInput) newDeviceCategoryInput.value = '';
             if (newDeviceIMEIInput) newDeviceIMEIInput.value = '';
@@ -572,7 +751,7 @@
             const imei = newDeviceIMEIInput.value.trim();
             const notes = newDeviceNotesInput.value.trim();
             const index = newDeviceIndexInput.value.trim();
-            if (!name || name.length < 3 || !category || !index) { showMessage("Name (min 3 chars), category, index required.", true, true); return; }
+            if (!name || name.length < 3 || !category || !index) { showMessage("Name (min 3 chars), category, and index are required.", true, true); return; }
             if (isNaN(Number(index))) { showMessage("Index must be a number.", true, true); return; }
 
             confirmAddDeviceButton.disabled = true; confirmAddDeviceButton.textContent = 'Adding...';
@@ -588,7 +767,7 @@
         }
 
         function openEditDeviceModal(deviceId) {
-            if (!isTeamMember) { showMessage("Permission denied.", true); return; }
+            if (!isTeamMember) { showMessage("Permission denied. Only team members can edit devices.", true); return; }
             const device = allDevices.find(d => d.id === deviceId);
             if (!device) { showMessage("Device not found.", true); return; }
             if (editDeviceIdInput) editDeviceIdInput.value = device.id;
@@ -609,7 +788,7 @@
             const imei = editDeviceIMEIInput.value.trim();
             const notes = editDeviceNotesInput.value.trim();
             const index = editDeviceIndexInput.value.trim();
-            if (!name || name.length < 3 || !category || !index) { showMessage("Name (min 3 chars), category, index required.", true, true); return; }
+            if (!name || name.length < 3 || !category || !index) { showMessage("Name (min 3 chars), category, and index are required.", true, true); return; }
             if (isNaN(Number(index))) { showMessage("Index must be a number.", true, true); return; }
 
             confirmEditDeviceButton.disabled = true; confirmEditDeviceButton.textContent = 'Saving...';
@@ -620,9 +799,8 @@
             } finally { confirmEditDeviceButton.disabled = false; confirmEditDeviceButton.textContent = 'Save Changes'; }
         }
 
-        // --- Team Member Management Logic (Team Members Only) ---
         function openAddTeamMemberModal() {
-            if (!isTeamMember) { showMessage("Only team members can manage team.", true); return; }
+            if (!isTeamMember) { showMessage("Only team members can manage the team.", true); return; }
             if (newTeamMemberUidInput) newTeamMemberUidInput.value = '';
             if (addTeamMemberModal) addTeamMemberModal.classList.add('active');
             if (newTeamMemberUidInput) newTeamMemberUidInput.focus();
@@ -632,17 +810,15 @@
             if (!isTeamMember) { showMessage("Permission denied.", true, true); closeAddTeamMemberModal(); return; }
             const newUid = newTeamMemberUidInput.value.trim();
             if (!newUid) { showMessage("Please enter the User ID of the new team member.", true, true); return; }
-            // Basic UID format check (Firebase UIDs are typically 28 chars, alphanumeric)
-            if (newUid.length < 20 || !/^[a-zA-Z0-9]+$/.test(newUid)) { // Basic validation
-                showMessage("Invalid User ID format.", true, true); return;
+            if (newUid.length < 20 || !/^[a-zA-Z0-9]+$/.test(newUid)) {
+                showMessage("Invalid User ID format. It should be an alphanumeric string (typically 28 chars).", true, true); return;
             }
 
             confirmAddTeamMemberButton.disabled = true; confirmAddTeamMemberButton.textContent = 'Adding...';
             try {
                 const teamMemberRef = doc(db, teamMembersCollectionPath, newUid);
-                // You can store additional info, e.g., who added them and when
-                await setDoc(teamMemberRef, { addedBy: currentUserId, addedAt: Timestamp.now(), role: "member" });
-                showMessage(`User ${newUid} added to the team successfully! They may need to refresh.`, false, true);
+                await setDoc(teamMemberRef, { addedBy: currentUserId, addedAt: Timestamp.now(), role: "member", initials: null });
+                showMessage(`User ${newUid} added to the team. They may need to refresh. They will be prompted for initials on their first reservation.`, false, true);
                 closeAddTeamMemberModal();
             } catch (error) {
                 console.error("Error adding team member: ", error);
@@ -652,7 +828,6 @@
             }
         }
 
-        // --- Bulk Add Devices Logic (Team Members Only) ---
         function openBulkAddDevicesModal() {
             if (!isTeamMember) { showMessage("Permission denied.", true); return; }
             if (bulkDevicesTextarea) bulkDevicesTextarea.value = '';
@@ -664,16 +839,14 @@
         async function confirmBulkAddDevices() {
             if (!isTeamMember) { showMessage("Permission denied.", true, true); closeBulkAddDevicesModal(); return; }
             const text = bulkDevicesTextarea.value.trim();
-            if (!text) { showMessage("Paste device data first.", true, true); return; }
-            // Accept CSV or line-based: name,category,imei,index,notes
+            if (!text) { showMessage("Paste device data first (CSV: name,category,imei,index,notes).", true, true); return; }
             const lines = text.split('\n').map(l => l.trim()).filter(l => l);
             if (lines.length === 0) { showMessage("No valid lines found.", true, true); return; }
             let added = 0, failed = 0;
-            confirmBulkAddDevicesButton.disabled = true; confirmBulkAddDevicesButton.textContent = 'Adding...';
+            confirmBulkAddDevicesButton.disabled = true; confirmBulkAddDevicesButton.textContent = `Adding ${lines.length} devices...`;
             for (const line of lines) {
-                let [name, category, imei, index, notes] = line.split(',');
-                name = name?.trim(); category = category?.trim(); imei = imei?.trim(); index = index?.trim(); notes = notes?.trim();
-                if (!name || name.length < 3 || !category || !index || isNaN(Number(index))) { failed++; continue; }
+                let [name, category, imei, index, notes] = line.split(',').map(s => s.trim());
+                if (!name || name.length < 3 || !category || !index || isNaN(Number(index))) { failed++; console.warn("Skipping invalid line:", line); continue; }
                 try {
                     await addDoc(devicesCol, {
                         name, category, imei: imei || 'N/A', notes: notes || '', index: Number(index),
@@ -681,25 +854,24 @@
                         addedByUserId: currentUserId, addedDate: Timestamp.now()
                     });
                     added++;
-                } catch (e) { failed++; }
+                } catch (e) { failed++; console.error("Failed to add device from bulk:", line, e); }
             }
-            showMessage(`Bulk add complete. Added: ${added}, Failed: ${failed}`, failed > 0, true);
+            showMessage(`Bulk add complete. Added: ${added}, Failed: ${failed}. Check console for details on failures.`, failed > 0, true);
             closeBulkAddDevicesModal();
             confirmBulkAddDevicesButton.disabled = false; confirmBulkAddDevicesButton.textContent = 'Add Devices';
         }
 
-        // --- Message & Confirmation Modals ---
         function showMessage(message, isError = false, inModal = false) {
             const activeModal = document.querySelector('.modal.active');
             const modalMessageArea = activeModal?.querySelector('.modal-message-area');
 
             if (inModal && modalMessageArea) {
                 modalMessageArea.textContent = message;
-                modalMessageArea.className = `modal-message-area text-sm mb-3 ${isError ? 'text-red-600' : 'text-green-600'}`;
+                modalMessageArea.className = `modal-message-area text-sm mb-3 ${isError ? 'text-red-500' : 'text-green-500'}`;
                 setTimeout(() => { modalMessageArea.textContent = ''; }, 3000);
             } else if (messageModal && messageText) {
                 messageText.textContent = message;
-                messageText.className = `text-lg mb-6 ${isError ? 'text-red-700' : 'text-green-700'}`;
+                messageText.className = `text-lg mb-6 ${isError ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`;
                 messageModal.classList.add('active');
             } else { console.log(`Message (isError: ${isError}): ${message}`); }
         }
@@ -712,7 +884,7 @@
         let resolveConfirmation;
         async function showConfirmationModal(message) {
             if (!confirmationModal || !confirmationMessageText || !confirmActionButton || !cancelActionButton) {
-                console.warn("Confirmation modal elements not found. Defaulting to true."); return true;
+                console.warn("Confirmation modal elements not found. Defaulting to true (simulating confirm)."); return true;
             }
             confirmationMessageText.textContent = message;
             confirmationModal.classList.add('active');
@@ -721,6 +893,92 @@
         if (confirmActionButton) confirmActionButton.addEventListener('click', () => { if (confirmationModal) confirmationModal.classList.remove('active'); if (resolveConfirmation) resolveConfirmation(true); });
         if (cancelActionButton) cancelActionButton.addEventListener('click', () => { if (confirmationModal) confirmationModal.classList.remove('active'); if (resolveConfirmation) resolveConfirmation(false); });
 
+        // Theme toggle logic
+        const themeToggleButton = document.getElementById('themeToggleButton');
+        const themeToggleEmoji = document.getElementById('themeToggleEmoji');
+        function setTheme(isDark) {
+            const html = document.documentElement;
+            if (isDark) {
+                html.classList.add('dark');
+                if (themeToggleEmoji) themeToggleEmoji.textContent = '🌙';
+            } else {
+                html.classList.remove('dark');
+                if (themeToggleEmoji) themeToggleEmoji.textContent = '☀️';
+            }
+        }
+        function getSystemPrefersDark() {
+            return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        }
+        function getStoredTheme() {
+            return localStorage.getItem('theme');
+        }
+        function storeTheme(isDark) {
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+        function updateThemeFromStorageOrSystem() {
+            const stored = getStoredTheme();
+            if (stored === 'dark') setTheme(true);
+            else if (stored === 'light') setTheme(false);
+            else setTheme(getSystemPrefersDark());
+        }
+
+        function updateThemeToggleEmoji() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                if (themeToggleEmoji) themeToggleEmoji.textContent = '🌙';
+            } else {
+                if (themeToggleEmoji) themeToggleEmoji.textContent = '☀️';
+            }
+        }
+
+        if (themeToggleButton) {
+            themeToggleButton.addEventListener('click', () => {
+                const html = document.documentElement;
+                const isDark = html.classList.contains('dark');
+                // Animate emoji
+                if (themeToggleEmoji) {
+                    themeToggleEmoji.classList.add('spin');
+                    setTimeout(() => themeToggleEmoji.classList.remove('spin'), 350);
+                }
+                setTheme(!isDark);
+                storeTheme(!isDark);
+                updateThemeToggleEmoji();
+            });
+        }
+
+        // On load, set theme from storage or system and update emoji
+        updateThemeFromStorageOrSystem();
+        updateThemeToggleEmoji();
+
+        // Splash theming logic
+        function setSplashBg() {
+            const splash = document.getElementById('splash-overlay');
+            if (!splash) return;
+            const isDark = document.documentElement.classList.contains('dark');
+            splash.style.background = isDark ? '#111827' : '#fff';
+        }
+        setSplashBg();
+        if (typeof themeToggleButton !== 'undefined' && themeToggleButton) {
+            themeToggleButton.addEventListener('click', setSplashBg);
+        }
+
+        // Remove splash after DOM is ready and as soon as possible
+        function hideSplash() {
+            const splash = document.getElementById('splash-overlay');
+            if (splash) {
+                splash.style.transition = 'opacity 0.25s cubic-bezier(.4,2,.6,1)';
+                splash.style.opacity = '0';
+                setTimeout(() => {
+                    if (splash.parentNode) splash.parentNode.removeChild(splash);
+                }, 250);
+            }
+        }
+        const splashOverlay = document.getElementById('splash-overlay'); // Reference to the splash overlay
+
+        const splashAnimationsTotalDuration = 750; // milliseconds (0.3s + 0.3s)
+        setTimeout(hideSplash, splashAnimationsTotalDuration);
+
+        // Call hideSplash after DOM and Firebase auth are ready
         document.addEventListener('DOMContentLoaded', () => {
             initializeDOMElements();
             if (searchInput) searchInput.addEventListener('input', filterAndRenderDevices);
@@ -736,171 +994,188 @@
             if (cancelEditDeviceButton) cancelEditDeviceButton.addEventListener('click', closeEditDeviceModal);
             if (closeMessageButton) closeMessageButton.addEventListener('click', closeMessageModal);
 
-            // Team Management Listeners
+            if (removeDeviceFromEditModalButton) {
+                removeDeviceFromEditModalButton.addEventListener('click', async () => {
+                    const deviceId = editDeviceIdInput.value;
+                    if (deviceId) {
+                        const success = await removeDevice(deviceId);
+                        if (success) {
+                            closeEditDeviceModal();
+                        }
+                    }
+                });
+            }
+
             if (manageTeamButton) manageTeamButton.addEventListener('click', openAddTeamMemberModal);
             if (confirmAddTeamMemberButton) confirmAddTeamMemberButton.addEventListener('click', confirmAddTeamMember);
             if (cancelAddTeamMemberButton) cancelAddTeamMemberButton.addEventListener('click', closeAddTeamMemberModal);
 
-            // Bulk Add Devices Listeners
             if (bulkAddDevicesButton) bulkAddDevicesButton.addEventListener('click', openBulkAddDevicesModal);
             if (confirmBulkAddDevicesButton) confirmBulkAddDevicesButton.addEventListener('click', confirmBulkAddDevices);
             if (cancelBulkAddDevicesButton) cancelBulkAddDevicesButton.addEventListener('click', closeBulkAddDevicesModal);
 
             if (Object.keys(firebaseConfig).length > 0) {
-                initializeAuth().then(() => { if (auth.currentUser) fetchAndRenderDevices(); });
+                initializeAuth();
             } else {
-                // Error already handled by top-level check
                 if (loadingIndicator) loadingIndicator.style.display = 'none';
             }
         });
     </script>
 
     <div id="app-container" class="container mx-auto p-4 md:p-8">
-        <header class="mb-8 text-center">
-            <h1 class="text-4xl font-bold text-primary">Team Device Inventory</h1>
-            <p id="userIdDisplay" class="text-sm text-neutral-500 mt-2">User ID: Loading...</p>
+        <header class="mb-6 text-center">
+            <h1 class="text-4xl font-bold header-title">Team Device Inventory</h1>
+            <p id="userIdDisplay" class="text-sm text-neutral-muted mt-1">User ID: Loading...</p>
         </header>
 
         <div class="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
             <div class="flex items-center gap-4">
-                <label for="sortCategorySelect" class="mr-2 font-medium text-neutral-700">Category:</label>
-                <select id="sortCategorySelect" class="p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                <label for="sortCategorySelect" class="mr-2 font-medium text-neutral-content">Category:</label>
+                <select id="sortCategorySelect" class="p-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent">
                     <option value="">All Categories</option>
                 </select>
             </div>
-            <div class="flex items-center gap-2">
-                <button id="compactToggleButton" class="bg-neutral-200 hover:bg-neutral-300 text-neutral-700 font-semibold py-2 px-4 rounded-lg transition">
+            <div class="flex items-center gap-2 flex-wrap justify-center">
+                <button id="compactToggleButton" class="button-neutral font-semibold py-2 px-4 rounded-lg transition">
                     Expand Actions
                 </button>
-                <button id="veryCompactToggleButton" class="bg-neutral-200 hover:bg-neutral-300 text-neutral-700 font-semibold py-2 px-4 rounded-lg transition ml-2">
+                <button id="veryCompactToggleButton" class="button-neutral font-semibold py-2 px-4 rounded-lg transition ml-2">
                     List View
                 </button>
-                <button id="manageTeamButton" style="display: none;" class="bg-accent hover:bg-yellow-500 text-white font-semibold py-2 px-4 rounded-lg transition">
+                <!-- Theme toggle button -->
+                <button id="themeToggleButton" class="button-neutral font-semibold py-2 px-4 rounded-lg transition ml-2 flex items-center justify-center" title="Toggle dark/light mode" aria-label="Toggle dark/light mode">
+                    <span id="themeToggleEmoji" class="theme-toggle-emoji text-xl">🌙</span>
+                </button>
+                <button id="manageTeamButton" style="display: none;" class="bg-accent hover:bg-yellow-600 dark:bg-accent-dark dark:hover:bg-yellow-500 text-white font-semibold py-2 px-4 rounded-lg transition ml-2">
                     Manage Team
                 </button>
             </div>
         </div>
 
-        <div class="mb-8 p-6 bg-white rounded-xl shadow-md flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-            <input type="text" id="searchInput" placeholder="Search by name, IMEI, category, notes..."
-                class="flex-grow p-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow">
-            <button id="addDeviceButton" style="display: none;" class="w-full md:w-auto bg-secondary hover:bg-emerald-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-150 ease-in-out shadow-md">
+        <div class="mb-8 p-6 bg-white dark:bg-darkcard rounded-xl shadow-md flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
+            <input type="text" id="searchInput" placeholder="Search by name, IMEI, category, notes, or #index..."
+                class="flex-grow p-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent transition-shadow">
+            <button id="addDeviceButton" style="display: none;" class="w-full md:w-auto bg-secondary hover:bg-emerald-600 dark:bg-secondary-dark dark:hover:bg-emerald-500 text-white font-semibold py-3 px-6 rounded-lg transition duration-150 ease-in-out shadow-md">
                 + Add New Device
             </button>
-            <button id="bulkAddDevicesButton" style="display: none;" class="w-full md:w-auto bg-secondary hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-150 ease-in-out shadow-md ml-2">
+            <button id="bulkAddDevicesButton" style="display: none;" class="w-full md:w-auto bg-secondary hover:bg-emerald-700 dark:bg-secondary-dark dark:hover:bg-emerald-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-150 ease-in-out shadow-md ml-0 md:ml-2 mt-2 md:mt-0">
                 Bulk Add Devices
             </button>
         </div>
 
         <div id="loadingIndicator" class="flex justify-center items-center py-10">
-            <svg class="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg class="animate-spin h-8 w-8 text-primary dark:text-primary-dark" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <p class="ml-3 text-neutral-600">Loading devices...</p>
+            <p class="ml-3 text-neutral-muted">Loading devices...</p>
         </div>
 
-        <div id="deviceContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+        <div id="deviceContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            </div>
     </div>
 
-    <div id="reservationModal" class="modal fixed inset-0 bg-gray-800 bg-opacity-75 items-center justify-center p-4 z-50">
-        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md transform transition-all">
-            <h2 class="text-2xl font-semibold text-primary mb-6">Reserve Device</h2>
+    <div id="reservationModal" class="modal fixed inset-0 bg-black bg-opacity-75 items-center justify-center p-4 z-50">
+        <div class="p-8 rounded-xl shadow-2xl w-full max-w-md transform transition-all">
+            <h2 class="text-2xl font-semibold modal-title mb-6">Reserve Device</h2>
             <input type="hidden" id="deviceIdToReserve">
             <div class="mb-6">
-                <label for="initialsInput" class="block text-sm font-medium text-neutral-700 mb-1">Your Initials (max 5 chars):</label>
-                <input type="text" id="initialsInput" maxlength="5" class="w-full p-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="e.g., JD">
+                <label for="initialsInput" class="block text-sm font-medium text-neutral-content mb-1">Your Initials (max 5 chars):</label>
+                <input type="text" id="initialsInput" maxlength="5" class="w-full p-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent" placeholder="e.g., JD">
             </div>
             <div class="modal-message-area text-sm mb-3 text-center"></div>
             <div class="flex justify-end space-x-4">
-                <button id="cancelReservationButton" class="px-6 py-2 text-neutral-700 bg-neutral-200 hover:bg-neutral-300 rounded-lg font-medium transition">Cancel</button>
-                <button id="confirmReservationButton" class="px-6 py-2 bg-primary hover:bg-blue-700 text-white rounded-lg font-semibold transition">Confirm Reservation</button>
+                <button id="cancelReservationButton" class="px-6 py-2 button-neutral rounded-lg font-medium transition">Cancel</button>
+                <button id="confirmReservationButton" class="px-6 py-2 bg-primary hover:bg-blue-700 dark:bg-primary-dark dark:hover:bg-blue-600 text-white rounded-lg font-semibold transition">Confirm Reservation</button>
             </div>
         </div>
     </div>
 
-    <div id="addDeviceModal" class="modal fixed inset-0 bg-gray-800 bg-opacity-75 items-center justify-center p-4 z-50 overflow-y-auto">
-        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg transform transition-all my-8">
-            <h2 class="text-2xl font-semibold text-secondary mb-6">Add New Device</h2>
+    <div id="addDeviceModal" class="modal fixed inset-0 bg-black bg-opacity-75 items-center justify-center p-4 z-50 overflow-y-auto">
+        <div class="p-8 rounded-xl shadow-2xl w-full max-w-lg transform transition-all my-8">
+            <h2 class="text-2xl font-semibold modal-title-secondary mb-6">Add New Device</h2>
             <div class="space-y-4">
-                <div><label for="newDeviceName" class="block text-sm font-medium text-neutral-700 mb-1">Device Name <span class="text-red-500">*</span></label><input type="text" id="newDeviceName" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent" placeholder="e.g., FMC920"></div>
-                <div><label for="newDeviceCategory" class="block text-sm font-medium text-neutral-700 mb-1">Category <span class="text-red-500">*</span></label><input type="text" id="newDeviceCategory" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent" placeholder="e.g., FMx9 Devices"></div>
-                <div><label for="newDeviceIMEI" class="block text-sm font-medium text-neutral-700 mb-1">IMEI</label><input type="text" id="newDeviceIMEI" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent" placeholder="e.g., 123456789012345"></div>
-                <div><label for="newDeviceIndex" class="block text-sm font-medium text-neutral-700 mb-1">Index <span class="text-red-500">*</span></label><input type="number" id="newDeviceIndex" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent" placeholder="e.g., 1" min="0" step="1" required></div>
-                <div><label for="newDeviceNotes" class="block text-sm font-medium text-neutral-700 mb-1">Notes</label><textarea id="newDeviceNotes" rows="3" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent" placeholder="Additional notes..."></textarea></div>
+                <div><label for="newDeviceName" class="block text-sm font-medium text-neutral-content mb-1">Device Name <span class="text-red-500">*</span></label><input type="text" id="newDeviceName" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary dark:focus:ring-secondary-dark focus:border-transparent" placeholder="e.g., FMC920"></div>
+                <div><label for="newDeviceCategory" class="block text-sm font-medium text-neutral-content mb-1">Category <span class="text-red-500">*</span></label><input type="text" id="newDeviceCategory" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary dark:focus:ring-secondary-dark focus:border-transparent" placeholder="e.g., FMx9 Devices"></div>
+                <div><label for="newDeviceIMEI" class="block text-sm font-medium text-neutral-content mb-1">IMEI</label><input type="text" id="newDeviceIMEI" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary dark:focus:ring-secondary-dark focus:border-transparent" placeholder="e.g., 123456789012345"></div>
+                <div><label for="newDeviceIndex" class="block text-sm font-medium text-neutral-content mb-1">Index <span class="text-red-500">*</span></label><input type="number" id="newDeviceIndex" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary dark:focus:ring-secondary-dark focus:border-transparent" placeholder="e.g., 1" min="0" step="1" required></div>
+                <div><label for="newDeviceNotes" class="block text-sm font-medium text-neutral-content mb-1">Notes</label><textarea id="newDeviceNotes" rows="3" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary dark:focus:ring-secondary-dark focus:border-transparent" placeholder="Additional notes..."></textarea></div>
             </div>
             <div class="modal-message-area text-sm mt-4 mb-3 text-center"></div>
             <div class="flex justify-end space-x-4 mt-6">
-                <button id="cancelAddDeviceButton" class="px-6 py-2 text-neutral-700 bg-neutral-200 hover:bg-neutral-300 rounded-lg font-medium transition">Cancel</button>
-                <button id="confirmAddDeviceButton" class="px-6 py-2 bg-secondary hover:bg-emerald-600 text-white rounded-lg font-semibold transition">Add Device</button>
+                <button id="cancelAddDeviceButton" class="px-6 py-2 button-neutral rounded-lg font-medium transition">Cancel</button>
+                <button id="confirmAddDeviceButton" class="px-6 py-2 bg-secondary hover:bg-emerald-600 dark:bg-secondary-dark dark:hover:bg-emerald-500 text-white rounded-lg font-semibold transition">Add Device</button>
             </div>
         </div>
     </div>
 
-    <div id="editDeviceModal" class="modal fixed inset-0 bg-gray-800 bg-opacity-75 items-center justify-center p-4 z-50 overflow-y-auto">
-        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg transform transition-all my-8">
-            <h2 class="text-2xl font-semibold text-neutral-700 mb-6">Edit Device</h2>
+    <div id="editDeviceModal" class="modal fixed inset-0 bg-black bg-opacity-75 items-center justify-center p-4 z-50 overflow-y-auto">
+        <div class="p-8 rounded-xl shadow-2xl w-full max-w-lg transform transition-all my-8">
+            <h2 class="text-2xl font-semibold modal-title-neutral mb-6">Edit Device</h2>
             <input type="hidden" id="editDeviceId">
             <div class="space-y-4">
-                <div><label for="editDeviceName" class="block text-sm font-medium text-neutral-700 mb-1">Device Name <span class="text-red-500">*</span></label><input type="text" id="editDeviceName" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"></div>
-                <div><label for="editDeviceCategory" class="block text-sm font-medium text-neutral-700 mb-1">Category <span class="text-red-500">*</span></label><input type="text" id="editDeviceCategory" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"></div>
-                <div><label for="editDeviceIMEI" class="block text-sm font-medium text-neutral-700 mb-1">IMEI</label><input type="text" id="editDeviceIMEI" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"></div>
-                <div><label for="editDeviceIndex" class="block text-sm font-medium text-neutral-700 mb-1">Index <span class="text-red-500">*</span></label><input type="number" id="editDeviceIndex" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" min="0" step="1" required></div>
-                <div><label for="editDeviceNotes" class="block text-sm font-medium text-neutral-700 mb-1">Notes</label><textarea id="editDeviceNotes" rows="3" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"></textarea></div>
+                <div><label for="editDeviceName" class="block text-sm font-medium text-neutral-content mb-1">Device Name <span class="text-red-500">*</span></label><input type="text" id="editDeviceName" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent"></div>
+                <div><label for="editDeviceCategory" class="block text-sm font-medium text-neutral-content mb-1">Category <span class="text-red-500">*</span></label><input type="text" id="editDeviceCategory" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent"></div>
+                <div><label for="editDeviceIMEI" class="block text-sm font-medium text-neutral-content mb-1">IMEI</label><input type="text" id="editDeviceIMEI" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent"></div>
+                <div><label for="editDeviceIndex" class="block text-sm font-medium text-neutral-content mb-1">Index <span class="text-red-500">*</span></label><input type="number" id="editDeviceIndex" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent" min="0" step="1" required></div>
+                <div><label for="editDeviceNotes" class="block text-sm font-medium text-neutral-content mb-1">Notes</label><textarea id="editDeviceNotes" rows="3" class="w-full p-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent"></textarea></div>
             </div>
             <div class="modal-message-area text-sm mt-4 mb-3 text-center"></div>
-            <div class="flex justify-end space-x-4 mt-6">
-                <button id="cancelEditDeviceButton" class="px-6 py-2 text-neutral-700 bg-neutral-200 hover:bg-neutral-300 rounded-lg font-medium transition">Cancel</button>
-                <button id="confirmEditDeviceButton" class="px-6 py-2 bg-primary hover:bg-blue-700 text-white rounded-lg font-semibold transition">Save Changes</button>
+            <div class="flex justify-between items-center mt-6">
+                <button id="removeDeviceFromEditModalButton" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition">Remove Device</button>
+                <div>
+                    <button id="cancelEditDeviceButton" class="px-6 py-2 button-neutral rounded-lg font-medium transition mr-2">Cancel</button>
+                    <button id="confirmEditDeviceButton" class="px-6 py-2 bg-primary hover:bg-blue-700 dark:bg-primary-dark dark:hover:bg-blue-600 text-white rounded-lg font-semibold transition">Save Changes</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <div id="addTeamMemberModal" class="modal fixed inset-0 bg-gray-800 bg-opacity-75 items-center justify-center p-4 z-50">
-        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md transform transition-all">
-            <h2 class="text-2xl font-semibold text-accent mb-6">Add Team Member</h2>
+    <div id="addTeamMemberModal" class="modal fixed inset-0 bg-black bg-opacity-75 items-center justify-center p-4 z-50">
+        <div class="p-8 rounded-xl shadow-2xl w-full max-w-md transform transition-all">
+            <h2 class="text-2xl font-semibold modal-title-accent mb-6">Add Team Member</h2>
             <div class="mb-6">
-                <label for="newTeamMemberUid" class="block text-sm font-medium text-neutral-700 mb-1">New Member's User ID (UID):</label>
-                <input type="text" id="newTeamMemberUid" class="w-full p-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent" placeholder="Enter Firebase User ID">
+                <label for="newTeamMemberUid" class="block text-sm font-medium text-neutral-content mb-1">New Member's User ID (UID):</label>
+                <input type="text" id="newTeamMemberUid" class="w-full p-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-accent dark:focus:ring-accent-dark focus:border-transparent" placeholder="Enter Firebase User ID">
             </div>
             <div class="modal-message-area text-sm mb-3 text-center"></div>
             <div class="flex justify-end space-x-4">
-                <button id="cancelAddTeamMemberButton" class="px-6 py-2 text-neutral-700 bg-neutral-200 hover:bg-neutral-300 rounded-lg font-medium transition">Cancel</button>
-                <button id="confirmAddTeamMemberButton" class="px-6 py-2 bg-accent hover:bg-yellow-500 text-white rounded-lg font-semibold transition">Add Team Member</button>
+                <button id="cancelAddTeamMemberButton" class="px-6 py-2 button-neutral rounded-lg font-medium transition">Cancel</button>
+                <button id="confirmAddTeamMemberButton" class="px-6 py-2 bg-accent hover:bg-yellow-600 dark:bg-accent-dark dark:hover:bg-yellow-500 text-white rounded-lg font-semibold transition">Add Team Member</button>
             </div>
         </div>
     </div>
 
-    <div id="bulkAddDevicesModal" class="modal fixed inset-0 bg-gray-800 bg-opacity-75 items-center justify-center p-4 z-50">
-        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg transform transition-all">
-            <h2 class="text-2xl font-semibold text-secondary mb-6">Bulk Add Devices</h2>
+    <div id="bulkAddDevicesModal" class="modal fixed inset-0 bg-black bg-opacity-75 items-center justify-center p-4 z-50">
+        <div class="p-8 rounded-xl shadow-2xl w-full max-w-lg transform transition-all">
+            <h2 class="text-2xl font-semibold modal-title-secondary mb-6">Bulk Add Devices</h2>
             <div class="mb-4">
-                <label for="bulkDevicesTextarea" class="block text-sm font-medium text-neutral-700 mb-1">
+                <label for="bulkDevicesTextarea" class="block text-sm font-medium text-neutral-content mb-1">
                     Paste devices (CSV: name,category,imei,index,notes; one per line):
                 </label>
-                <textarea id="bulkDevicesTextarea" rows="8" class="w-full p-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent" placeholder="e.g.&#10;FMC920,FMx9 Devices,123456789012345,1,Test device"></textarea>
+                <textarea id="bulkDevicesTextarea" rows="8" class="w-full p-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary dark:focus:ring-secondary-dark focus:border-transparent" placeholder="e.g.&#10;FMC920,FMx9 Devices,123456789012345,1,Test device&#10;FMB003,Bluetooth,N/A,2,Asset tracker"></textarea>
             </div>
             <div class="modal-message-area text-sm mb-3 text-center"></div>
             <div class="flex justify-end space-x-4">
-                <button id="cancelBulkAddDevicesButton" class="px-6 py-2 text-neutral-700 bg-neutral-200 hover:bg-neutral-300 rounded-lg font-medium transition">Cancel</button>
-                <button id="confirmBulkAddDevicesButton" class="px-6 py-2 bg-secondary hover:bg-emerald-700 text-white rounded-lg font-semibold transition">Add Devices</button>
+                <button id="cancelBulkAddDevicesButton" class="px-6 py-2 button-neutral rounded-lg font-medium transition">Cancel</button>
+                <button id="confirmBulkAddDevicesButton" class="px-6 py-2 bg-secondary hover:bg-emerald-700 dark:bg-secondary-dark dark:hover:bg-emerald-600 text-white rounded-lg font-semibold transition">Add Devices</button>
             </div>
         </div>
     </div>
 
-    <div id="messageModal" class="modal fixed inset-0 bg-gray-800 bg-opacity-75 items-center justify-center p-4 z-50">
-        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-center transform transition-all">
+    <div id="messageModal" class="modal fixed inset-0 bg-black bg-opacity-75 items-center justify-center p-4 z-50">
+        <div class="p-8 rounded-xl shadow-2xl w-full max-w-md text-center transform transition-all">
             <p id="messageText" class="text-lg mb-6">Message goes here.</p>
-            <button id="closeMessageButton" class="px-8 py-2 bg-primary hover:bg-blue-700 text-white rounded-lg font-semibold transition">OK</button>
+            <button id="closeMessageButton" class="px-8 py-2 bg-primary hover:bg-blue-700 dark:bg-primary-dark dark:hover:bg-blue-600 text-white rounded-lg font-semibold transition">OK</button>
         </div>
     </div>
 
-    <div id="confirmationModal" class="modal fixed inset-0 bg-gray-800 bg-opacity-75 items-center justify-center p-4 z-50">
-        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md transform transition-all">
-            <h2 class="text-xl font-semibold text-neutral-800 mb-4">Confirm Action</h2>
-            <p id="confirmationMessageText" class="text-neutral-700 mb-6">Are you sure?</p>
+    <div id="confirmationModal" class="modal fixed inset-0 bg-black bg-opacity-75 items-center justify-center p-4 z-50">
+        <div class="p-8 rounded-xl shadow-2xl w-full max-w-md transform transition-all">
+            <h2 class="text-xl font-semibold confirmation-title mb-4">Confirm Action</h2>
+            <p id="confirmationMessageText" class="text-neutral-content mb-6">Are you sure?</p>
             <div class="flex justify-end space-x-4">
-                <button id="cancelActionButton" class="px-6 py-2 text-neutral-700 bg-neutral-200 hover:bg-neutral-300 rounded-lg font-medium transition">Cancel</button>
+                <button id="cancelActionButton" class="px-6 py-2 button-neutral rounded-lg font-medium transition">Cancel</button>
                 <button id="confirmActionButton" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition">Confirm</button>
             </div>
         </div>
