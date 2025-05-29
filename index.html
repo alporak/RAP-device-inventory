@@ -449,9 +449,9 @@
                 if (loadingIndicator) loadingIndicator.style.display = 'none';
             }, (error) => {
                 console.error("Error fetching devices: ", error);
-                showMessage(`Error fetching devices: ${error.message}`, true);
+                showMessage(`Guests will not able able to view devices. Please register by contacting an admin.`, true);
                 if (loadingIndicator) loadingIndicator.style.display = 'none';
-                if (deviceContainer) deviceContainer.innerHTML = `<p class="text-red-500 col-span-full text-center py-8">Error loading devices. Please try refreshing.</p>`;
+                if (deviceContainer) deviceContainer.innerHTML = `<p class="text-red-500 col-span-full text-center py-8">Guests will not able able to view devices. Please register by contacting an admin.</p>`;
             });
         }
 
