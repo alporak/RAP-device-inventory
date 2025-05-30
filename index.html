@@ -18,7 +18,7 @@
                         primary: { DEFAULT: '#3B82F6', dark: '#2563EB' },
                         secondary: { DEFAULT: '#10B981', dark: '#059669' },
                         accent: { DEFAULT: '#F59E0B', dark: '#D97706' },
-                        danger: { DEFAULT: '#EF4444', dark: '#DC2626' }, // Red-500, Red-600
+                        danger: { DEFAULT: '#EF4444', dark: '#DC2626' },
                         neutral: {
                             50:  '#F9FAFB', 100: '#F3F4F6', 200: '#E5E7EB',
                             300: '#D1D5DB', 400: '#9CA3AF', 500: '#6B7280',
@@ -88,7 +88,18 @@
         .telematics { transform: translateX(-100%); opacity: 0; animation: slideIn 0.3s forwards 0.3s; }
         .table-cell-truncate { max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         @media (max-width: 640px) { .table-cell-truncate { max-width: 100px; } }
-
+        .reserved-section-title {
+            font-size: 1.5rem; /* 24px */
+            font-weight: 600; /* semibold */
+            margin-bottom: 1rem; /* 16px */
+            padding-bottom: 0.5rem; /* 8px */
+            border-bottom: 2px solid #3B82F6; /* primary color */
+            color: #3B82F6; /* primary color */
+        }
+        html.dark .reserved-section-title {
+            border-bottom-color: #2563EB; /* primary-dark color */
+            color: #2563EB; /* primary-dark color */
+        }
     </style>
 </head>
 
@@ -110,7 +121,7 @@
         // Firebase configuration (environment or hardcoded fallback)
         const envFirebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const hardcodedFirebaseConfig = { /* Keep your fallback config here if needed, but ideally use env var */
-            apiKey: "AIzaSyDvnfIehUU8oT80-7g-h7di0RXc4DHtE4Y",
+            apiKey: "AIzaSyDvnfIehUU8oT80-7g-h7di0RXc4DHtE4Y", // Replace with your actual API key if not using environment variable
             authDomain: "rap-stash.firebaseapp.com",
             projectId: "rap-stash",
             storageBucket: "rap-stash.appspot.com",
@@ -132,16 +143,15 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        setLogLevel('debug'); // Or 'error' for less verbose logging in production
+        setLogLevel('debug'); 
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const devicesCollectionPath = `artifacts/${appId}/public/data/devices`;
-        const teamMembersCollectionPath = `artifacts/${appId}/public/data/team_members`; // Updated path
+        const teamMembersCollectionPath = `artifacts/${appId}/public/data/team_members`;
 
         const devicesCol = collection(db, devicesCollectionPath);
         const teamMembersCol = collection(db, teamMembersCollectionPath);
 
-        // --- User Roles ---
         const ROLES = {
             ESD_TEAM_LEAD: 'ESD Team Lead',
             ESD_MEMBER: 'ESD Member',
@@ -152,31 +162,44 @@
 
         let currentUser = {
             uid: null,
-            name: null, // Formerly initials
+            name: null, 
             role: null,
             isTeamMember: false,
             isLead: false
         };
         
         let allDevices = [];
-        let allTeamMembers = []; // For user management by leads
+        let allTeamMembers = []; 
 
-        // --- Caching ---
         const CACHE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
 
         let currentCategoryFilter = '';
         let compactMode = true;
         let veryCompactMode = false;
 
-        // --- DOM Elements (grouped for clarity) ---
+        // --- DOM Elements ---
         let deviceContainer, searchInput, sortCategorySelect, compactToggleButton, veryCompactToggleButton, themeToggleButton, themeToggleEmoji;
         let reservationModal, nameInputForReservation, confirmReservationButton, cancelReservationButton, deviceIdToReserveInput;
         let userIdDisplay, loadingIndicator, messageModal, messageText, closeMessageButton;
-        let addDeviceButton, addDeviceModal, newDeviceNameInput, newDeviceCategoryInput, newDeviceIMEIInput, newDeviceNotesInput, newDeviceIndexInput, confirmAddDeviceButton, cancelAddDeviceButton;
-        let editDeviceModal, editDeviceNameInput, editDeviceCategoryInput, editDeviceIMEIInput, editDeviceNotesInput, editDeviceIndexInput, confirmEditDeviceButton, cancelEditDeviceButton, editDeviceIdInput, removeDeviceFromEditModalButton;
-        let userSettingsButton, addUserModal, newMemberUidInput, newMemberNameInput, newMemberRoleSelect, confirmAddUserButton, cancelAddUserButton;
-        let manageUsersModal, usersTableBody, closeManageUsersButton, editUserModal, editUserIdInput, editUserNameInput, editUserRoleSelect, confirmEditUserButton, cancelEditUserButton, removeUserButtonInEditModal;
-        let bulkAddDevicesButton, bulkAddDevicesModal, bulkDevicesTextarea, confirmBulkAddDevicesButton, cancelBulkAddDevicesButton;
+        
+        // Combined Device Management Modal
+        let deviceManagementModal, deviceManagementTitle;
+        let addDeviceView, editDeviceView, bulkAddDevicesView;
+        // Add Device View fields
+        let newDeviceNameInput, newDeviceCategoryInput, newDeviceIMEIInput, newDeviceIndexInput, newDeviceLocationInput, newDeviceNotesInput;
+        let confirmAddDeviceButton, cancelAddDeviceButton, backToDeviceManageFromAddBtn;
+        // Edit Device View fields
+        let editDeviceNameInput, editDeviceCategoryInput, editDeviceIMEIInput, editDeviceIndexInput, editDeviceLocationInput, editDeviceNotesInput;
+        let confirmEditDeviceButton, cancelEditDeviceButton, editDeviceIdInput, removeDeviceFromEditModalButton, backToDeviceManageFromEditBtn;
+        // Bulk Add Devices View fields
+        let bulkDevicesTextarea, confirmBulkAddDevicesButton, cancelBulkAddDevicesButton, backToDeviceManageFromBulkBtn;
+        let openDeviceManagementButton; // Button to open the combined modal (replaces individual add/bulk add buttons)
+
+        let userSettingsButton, userManagementModal; // User management modal elements remain largely the same
+        let addUserView, newMemberUidInput, newMemberNameInput, newMemberRoleSelect, confirmAddUserButton, cancelAddUserButton, backToUserManageFromAddBtn;
+        let manageUsersView, usersTableBody, closeManageUsersButton, showAddUserViewBtn;
+        let editUserView, editUserIdInput, editUserNameInput, editUserRoleSelect, confirmEditUserButton, cancelEditUserButton, removeUserButtonInEditModal, backToUserManageFromEditBtn, editUserTitle;
+        
         let confirmationModal, confirmationMessageText, confirmActionButton, cancelActionButton;
 
 
@@ -208,57 +231,71 @@
             cancelReservationButton = document.getElementById('cancelReservationButton');
             deviceIdToReserveInput = document.getElementById('deviceIdToReserve');
 
-            // Add Device Controls
-            addDeviceButton = document.getElementById('addDeviceButton');
-            addDeviceModal = document.getElementById('addDeviceModal');
+            // --- Combined Device Management Modal ---
+            openDeviceManagementButton = document.getElementById('openDeviceManagementButton');
+            deviceManagementModal = document.getElementById('deviceManagementModal');
+            deviceManagementTitle = document.getElementById('deviceManagementTitle');
+            
+            addDeviceView = document.getElementById('addDeviceView');
+            editDeviceView = document.getElementById('editDeviceView');
+            bulkAddDevicesView = document.getElementById('bulkAddDevicesView');
+
+            // Fields for Add Device View
             newDeviceNameInput = document.getElementById('newDeviceName');
             newDeviceCategoryInput = document.getElementById('newDeviceCategory');
             newDeviceIMEIInput = document.getElementById('newDeviceIMEI');
             newDeviceIndexInput = document.getElementById('newDeviceIndex');
+            newDeviceLocationInput = document.getElementById('newDeviceLocation'); // New
             newDeviceNotesInput = document.getElementById('newDeviceNotes');
             confirmAddDeviceButton = document.getElementById('confirmAddDeviceButton');
-            cancelAddDeviceButton = document.getElementById('cancelAddDeviceButton');
+            // cancelAddDeviceButton is now backToDeviceManageFromAddBtn
+            backToDeviceManageFromAddBtn = document.getElementById('backToDeviceManageFromAddBtn');
 
-            // Edit Device Controls
-            editDeviceModal = document.getElementById('editDeviceModal');
+
+            // Fields for Edit Device View
             editDeviceNameInput = document.getElementById('editDeviceName');
             editDeviceCategoryInput = document.getElementById('editDeviceCategory');
             editDeviceIMEIInput = document.getElementById('editDeviceIMEI');
             editDeviceIndexInput = document.getElementById('editDeviceIndex');
+            editDeviceLocationInput = document.getElementById('editDeviceLocation'); // New
             editDeviceNotesInput = document.getElementById('editDeviceNotes');
             confirmEditDeviceButton = document.getElementById('confirmEditDeviceButton');
-            cancelEditDeviceButton = document.getElementById('cancelEditDeviceButton');
+            // cancelEditDeviceButton is now backToDeviceManageFromEditBtn
+            backToDeviceManageFromEditBtn = document.getElementById('backToDeviceManageFromEditBtn');
             editDeviceIdInput = document.getElementById('editDeviceId');
             removeDeviceFromEditModalButton = document.getElementById('removeDeviceFromEditModalButton');
             
-            // User Settings / Management Controls
+            // Fields for Bulk Add Devices View
+            bulkDevicesTextarea = document.getElementById('bulkDevicesTextarea');
+            confirmBulkAddDevicesButton = document.getElementById('confirmBulkAddDevicesButton');
+            // cancelBulkAddDevicesButton is now backToDeviceManageFromBulkBtn
+            backToDeviceManageFromBulkBtn = document.getElementById('backToDeviceManageFromBulkBtn');
+            
+            // User Settings / Management Controls (largely unchanged structure, just ensure IDs match)
             userSettingsButton = document.getElementById('userSettingsButton');
-            addUserModal = document.getElementById('addUserModal');
+            userManagementModal = document.getElementById('userManagementModal'); // The main modal container
+
+            manageUsersView = document.getElementById('manageUsersView'); // The list view
+            usersTableBody = document.getElementById('usersTableBody');
+            closeManageUsersButton = document.getElementById('closeUserManagementButton'); // Closes the whole modal
+            showAddUserViewBtn = document.getElementById('showAddUserViewBtn'); // Button within manage view to go to add view
+
+            addUserView = document.getElementById('addUserViewContent'); // The add user form view
             newMemberUidInput = document.getElementById('newMemberUid');
             newMemberNameInput = document.getElementById('newMemberName');
             newMemberRoleSelect = document.getElementById('newMemberRoleSelect');
             confirmAddUserButton = document.getElementById('confirmAddUserButton');
-            cancelAddUserButton = document.getElementById('cancelAddUserButton');
+            backToUserManageFromAddBtn = document.getElementById('backToUserManageFromAddBtn'); // Back from add to manage
 
-            manageUsersModal = document.getElementById('manageUsersModal');
-            usersTableBody = document.getElementById('usersTableBody');
-            closeManageUsersButton = document.getElementById('closeManageUsersButton');
-            
-            editUserModal = document.getElementById('editUserModal');
+            editUserView = document.getElementById('editUserViewContent'); // The edit user form view
+            editUserTitle = document.getElementById('editUserTitle');
             editUserIdInput = document.getElementById('editUserId');
             editUserNameInput = document.getElementById('editUserName');
             editUserRoleSelect = document.getElementById('editUserRoleSelect');
             confirmEditUserButton = document.getElementById('confirmEditUserButton');
-            cancelEditUserButton = document.getElementById('cancelEditUserButton');
             removeUserButtonInEditModal = document.getElementById('removeUserButtonInEditModal');
+            backToUserManageFromEditBtn = document.getElementById('backToUserManageFromEditBtn'); // Back from edit to manage
 
-
-            // Bulk Add Devices
-            bulkAddDevicesButton = document.getElementById('bulkAddDevicesButton');
-            bulkAddDevicesModal = document.getElementById('bulkAddDevicesModal');
-            bulkDevicesTextarea = document.getElementById('bulkDevicesTextarea');
-            confirmBulkAddDevicesButton = document.getElementById('confirmBulkAddDevicesButton');
-            cancelBulkAddDevicesButton = document.getElementById('cancelBulkAddDevicesButton');
 
             // Populate role selects
             populateRoleSelect(newMemberRoleSelect);
@@ -267,7 +304,7 @@
         
         function populateRoleSelect(selectElement) {
             if (!selectElement) return;
-            selectElement.innerHTML = ''; // Clear existing options
+            selectElement.innerHTML = ''; 
             for (const roleKey in ROLES) {
                 const option = document.createElement('option');
                 option.value = ROLES[roleKey];
@@ -277,6 +314,7 @@
         }
 
         async function fetchCurrentUserProfile(userId) {
+            // ... (same as before)
             if (!userId) {
                 currentUser = { uid: null, name: null, role: null, isTeamMember: false, isLead: false };
                 updateUIAccess();
@@ -288,17 +326,14 @@
                 if (userDocSnap.exists()) {
                     const userData = userDocSnap.data();
                     currentUser.uid = userId;
-                    currentUser.name = userData.name || 'N/A'; // Updated from initials
-                    currentUser.role = userData.role || ROLES.ESD_MEMBER; // Default role if not set
+                    currentUser.name = userData.name || 'N/A'; 
+                    currentUser.role = userData.role || ROLES.ESD_MEMBER; 
                     currentUser.isTeamMember = true;
                     currentUser.isLead = LEAD_ROLES.includes(currentUser.role);
                     console.log(`User ${userId} profile loaded: Name: ${currentUser.name}, Role: ${currentUser.role}, IsLead: ${currentUser.isLead}`);
                 } else {
                     currentUser = { uid: userId, name: 'Guest', role: null, isTeamMember: false, isLead: false };
                     console.log(`User ${userId} not found in team_members. Treating as guest.`);
-                     // If user is not in team_members, but we want to allow them to be added,
-                    // we might need a slightly different flow or a way for an admin to add them initially.
-                    // For now, if not in team_members, they are a guest with no special permissions.
                 }
             } catch (error) {
                 console.error("Error fetching user profile:", error);
@@ -312,33 +347,28 @@
             const commonControlsDisplay = currentUser.isTeamMember ? 'block' : 'none';
             const leadControlsDisplay = currentUser.isLead ? 'block' : 'none';
 
-            if (addDeviceButton) addDeviceButton.style.display = leadControlsDisplay;
-            if (bulkAddDevicesButton) bulkAddDevicesButton.style.display = leadControlsDisplay;
-            if (userSettingsButton) userSettingsButton.style.display = commonControlsDisplay; // All team members see this
+            if (openDeviceManagementButton) openDeviceManagementButton.style.display = leadControlsDisplay;
+            if (userSettingsButton) userSettingsButton.style.display = commonControlsDisplay; 
 
-            // Adjust compact toggle based on very compact mode
             if (compactToggleButton) {
                 compactToggleButton.disabled = veryCompactMode;
                  if(veryCompactMode) compactToggleButton.classList.add('opacity-50', 'cursor-not-allowed');
                  else compactToggleButton.classList.remove('opacity-50', 'cursor-not-allowed');
             }
-            filterAndRenderDevices(); // Re-render devices to apply role-based button visibility
-            if (currentUser.isLead) fetchAllTeamMembers(); // Leads need the full list for management
+            filterAndRenderDevices(); 
+            if (currentUser.isLead) fetchAllTeamMembers(); 
         }
 
         async function initializeAuth() {
+            // ... (same as before)
             try {
                 await setPersistence(auth, browserLocalPersistence);
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
-                        await fetchCurrentUserProfile(user.uid); // Fetch profile, then proceed
+                        await fetchCurrentUserProfile(user.uid); 
                         if (userIdDisplay) userIdDisplay.textContent = `User ID: ${currentUser.uid} (${currentUser.name} - ${currentUser.role || 'No Role'})`;
                         console.log("User signed in with UID:", currentUser.uid);
-                        
-                        // Load devices (from cache or Firestore)
                         loadDevices(); 
-                        
-                        // Handle direct actions from URL
                         handleDirectURLActions();
 
                     } else {
@@ -353,7 +383,6 @@
                         } else {
                             await signInAnonymously(auth);
                         }
-                        // updateUIAccess will be called again by fetchCurrentUserProfile once auth state changes
                     }
                 });
             } catch (error) {
@@ -367,6 +396,7 @@
         }
 
         function handleDirectURLActions() {
+            // ... (same as before)
             const urlParams = new URLSearchParams(window.location.search);
             const action = urlParams.get('action');
             const deviceId = urlParams.get('deviceId');
@@ -374,10 +404,8 @@
             if (action === 'release' && deviceId) {
                 if (currentUser.isTeamMember) {
                     console.log(`Direct action: Attempting to release device ${deviceId}`);
-                    // Add a small delay to ensure UI is somewhat ready, though onSnapshot might not have fired yet.
                     setTimeout(() => {
-                        releaseDevice(deviceId, true); // Pass a flag for direct release
-                         // Clean URL
+                        releaseDevice(deviceId, true); 
                         window.history.replaceState({}, document.title, window.location.pathname);
                     }, 1000);
                    
@@ -387,8 +415,7 @@
             }
         }
         
-        // --- Device Caching Logic ---
-        function getCachedDevices() {
+        function getCachedDevices() { /* ... (same as before) ... */ 
             const cachedData = localStorage.getItem('cachedDevices');
             const cacheTimestamp = localStorage.getItem('cacheTimestamp');
             if (cachedData && cacheTimestamp) {
@@ -400,14 +427,14 @@
             console.log("Cache empty or expired.");
             return null;
         }
-
-        function setCachedDevices(devices) {
+        function setCachedDevices(devices) { /* ... (same as before) ... */ 
             localStorage.setItem('cachedDevices', JSON.stringify(devices));
             localStorage.setItem('cacheTimestamp', Date.now().toString());
             console.log("Devices cached.");
         }
 
         function loadDevices() {
+            // ... (same as before, ensures Timestamps are handled)
             if (!currentUser.uid) {
                 console.log("User not authenticated, cannot fetch devices.");
                 if (loadingIndicator) loadingIndicator.style.display = 'none';
@@ -421,23 +448,21 @@
             if (cached) {
                 allDevices = cached.map(d => ({
                     ...d,
-                    // Firestore Timestamps are not directly JSON serializable, so re-hydrate if needed
                     reservationDate: d.reservationDate && d.reservationDate.seconds ? Timestamp.fromDate(new Date(d.reservationDate.seconds * 1000)) : null,
                     addedDate: d.addedDate && d.addedDate.seconds ? Timestamp.fromDate(new Date(d.addedDate.seconds * 1000)) : null
                 }));
                 populateCategoryDropdown();
                 filterAndRenderDevices();
-                if (loadingIndicator) loadingIndicator.style.display = 'none'; // Hide loading if cache is used
+                if (loadingIndicator) loadingIndicator.style.display = 'none';
             } else {
                  if (loadingIndicator) loadingIndicator.style.display = 'flex';
             }
 
-            // Always listen for real-time updates
             onSnapshot(devicesCol, (snapshot) => {
                 allDevices = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allDevices.sort((a, b) => (a.index || 0) - (b.index || 0));
                 
-                setCachedDevices(allDevices.map(d => ({ // Store a JSON-friendly version
+                setCachedDevices(allDevices.map(d => ({ 
                     ...d,
                     reservationDate: d.reservationDate ? { seconds: d.reservationDate.seconds, nanoseconds: d.reservationDate.nanoseconds } : null,
                     addedDate: d.addedDate ? { seconds: d.addedDate.seconds, nanoseconds: d.addedDate.nanoseconds } : null
@@ -455,12 +480,96 @@
             });
         }
 
+        function renderSingleDeviceCard(device, container, isReservedByCurrentUserView = false) {
+            const deviceCard = document.createElement('div');
+            deviceCard.className = `device-card p-6 rounded-xl shadow-lg flex flex-col justify-between${compactMode && !isReservedByCurrentUserView ? ' compact' : ''}`;
+            if (compactMode && !isReservedByCurrentUserView) deviceCard.style.cursor = 'pointer';
 
-        function renderDevices(devicesToRender) {
+
+            let notesHtml = device.notes && device.notes.trim() ? `<p class="text-sm text-neutral-content mb-2"><strong>Notes:</strong> ${device.notes}</p>` : '<p class="text-sm text-neutral-muted mb-2">No notes.</p>';
+            let locationHtml = device.location && device.location.trim() ? `<p class="text-sm text-neutral-content mb-1"><strong class="font-medium">Location:</strong> ${device.location}</p>` : '<p class="text-sm text-neutral-muted mb-1">Location not set.</p>';
+            let reservationStatusHtml = '';
+            if (device.reservedByName) { 
+                const reservationDate = device.reservationDate?.toDate ? device.reservationDate.toDate().toLocaleDateString() : (device.reservationDate && device.reservationDate.seconds ? new Date(device.reservationDate.seconds * 1000).toLocaleDateString() : 'N/A');
+                reservationStatusHtml = `<p class="text-sm font-semibold text-red-500">Reserved by: ${device.reservedByName}</p><p class="text-xs text-red-400">On: ${reservationDate}</p>`;
+            } else {
+                reservationStatusHtml = `<p class="text-sm font-semibold text-green-500">Available</p>`;
+            }
+
+            const mainActionBtnHtml = generateButtonHtml(device);
+            let actionButtonsHtml = '';
+
+            if (!compactMode || isReservedByCurrentUserView) { // Always expand actions for "You've Reserved" or if not compact
+                actionButtonsHtml = mainActionBtnHtml;
+                if (currentUser.isLead) { 
+                    actionButtonsHtml += `<button data-device-id="${device.id}" class="edit-device-btn-trigger w-full bg-neutral-500 hover:bg-neutral-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out mt-2">Edit</button>`;
+                }
+            } else { // Compact mode for general list
+                let compactActionsContent = mainActionBtnHtml;
+                if (currentUser.isLead) { 
+                    compactActionsContent += `<button data-device-id="${device.id}" class="edit-device-btn-trigger w-full bg-neutral-500 hover:bg-neutral-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out mt-2">Edit</button>`;
+                }
+                actionButtonsHtml = `<div class="compact-actions hidden">${compactActionsContent}</div>`;
+            }
+
+            deviceCard.innerHTML = `
+                <div>
+                    <div class="flex items-center mb-1">
+                        <span class="text-xs font-bold text-accent dark:text-accent-dark bg-neutral-100 dark:bg-neutral-700 rounded px-2 py-0.5 mr-2">#${device.index !== undefined ? device.index : 'N/A'}</span>
+                        <h3 class="text-xl font-semibold text-primary mb-0">${device.name || 'N/A'}</h3>
+                    </div>
+                    <p class="text-xs text-neutral-muted uppercase tracking-wider mb-2">${device.category || 'Uncategorized'}</p>
+                    <p class="text-sm text-neutral-content mb-1"><strong class="font-medium">IMEI:</strong> ${device.imei || 'N/A'}</p>
+                    ${locationHtml}
+                    ${notesHtml}
+                    ${reservationStatusHtml}
+                </div>
+                <div class="mt-4 flex flex-col gap-2">
+                    ${actionButtonsHtml}
+                </div>`;
+            container.appendChild(deviceCard);
+
+            if (compactMode && !isReservedByCurrentUserView) {
+                deviceCard.addEventListener('click', function (e) {
+                    if (e.target.closest('button')) return; 
+                    const actions = deviceCard.querySelector('.compact-actions');
+                    if (actions) actions.classList.toggle('hidden');
+                });
+            }
+        }
+        
+        function renderDevices(devicesToRender, reservedByCurrentUser) {
             if (!deviceContainer) return;
-            deviceContainer.innerHTML = '';
+            deviceContainer.innerHTML = ''; // Clear previous content
 
-            if (devicesToRender.length === 0) {
+            // Section for devices reserved by the current user
+            if (reservedByCurrentUser.length > 0) {
+                const reservedSection = document.createElement('div');
+                reservedSection.id = 'reservedByCurrentUserSection';
+                reservedSection.className = 'mb-8';
+                
+                const title = document.createElement('h2');
+                title.className = 'reserved-section-title';
+                title.textContent = "You've Reserved:";
+                reservedSection.appendChild(title);
+
+                const reservedGrid = document.createElement('div');
+                reservedGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6';
+                reservedByCurrentUser.forEach(device => renderSingleDeviceCard(device, reservedGrid, true));
+                reservedSection.appendChild(reservedGrid);
+                deviceContainer.appendChild(reservedSection);
+
+                // Add a separator if there are other devices to show
+                if (devicesToRender.length > 0) {
+                    const separator = document.createElement('hr');
+                    separator.className = 'my-8 border-neutral-300 dark:border-neutral-600';
+                    deviceContainer.appendChild(separator);
+                }
+            }
+
+
+            // Section for all other devices (or all if no specific user reservations)
+            if (devicesToRender.length === 0 && reservedByCurrentUser.length === 0) {
                 const searchTerm = searchInput ? searchInput.value : '';
                 let message = "No devices found.";
                 if (searchTerm) message = `No devices match your search for "${searchTerm}".`;
@@ -468,137 +577,93 @@
                 deviceContainer.innerHTML = `<p class="text-neutral-muted col-span-full text-center py-8">${message}</p>`;
                 return;
             }
+            
+            if (devicesToRender.length > 0) {
+                 if (veryCompactMode) {
+                    let table = document.createElement('table');
+                    table.className = "min-w-full text-xs border border-neutral-300 dark:border-darkborder bg-white dark:bg-darkcard rounded-xl overflow-hidden";
+                    let thead = document.createElement('thead');
+                    thead.innerHTML = `<tr class="bg-neutral-100 dark:bg-neutral-700">
+                        <th class="px-2 py-1 text-left text-neutral-content">#</th>
+                        <th class="px-2 py-1 text-left text-neutral-content">Name</th>
+                        <th class="px-2 py-1 text-left text-neutral-content">Category</th>
+                        <th class="px-2 py-1 text-left text-neutral-content">Location</th>
+                        <th class="px-2 py-1 text-left text-neutral-content">IMEI</th>
+                        <th class="px-2 py-1 text-left text-neutral-content">Notes</th>
+                        <th class="px-2 py-1 text-left text-neutral-content">Status</th>
+                        <th class="px-2 py-1 text-left text-neutral-content">Actions</th>
+                    </tr>`;
+                    table.appendChild(thead);
+                    let tbody = document.createElement('tbody');
+                    devicesToRender.forEach(device => {
+                        let status = device.reservedByName
+                            ? `<span class="text-red-500 font-semibold">Reserved: ${device.reservedByName}</span>`
+                            : `<span class="text-green-500 font-semibold">Available</span>`;
 
-            if (veryCompactMode) {
-                let table = document.createElement('table');
-                table.className = "min-w-full text-xs border border-neutral-300 dark:border-darkborder bg-white dark:bg-darkcard rounded-xl overflow-hidden";
-                let thead = document.createElement('thead');
-                thead.innerHTML = `<tr class="bg-neutral-100 dark:bg-neutral-700">
-                    <th class="px-2 py-1 text-left text-neutral-content">#</th>
-                    <th class="px-2 py-1 text-left text-neutral-content">Name</th>
-                    <th class="px-2 py-1 text-left text-neutral-content">Category</th>
-                    <th class="px-2 py-1 text-left text-neutral-content">IMEI</th>
-                    <th class="px-2 py-1 text-left text-neutral-content">Notes</th>
-                    <th class="px-2 py-1 text-left text-neutral-content">Status</th>
-                    <th class="px-2 py-1 text-left text-neutral-content">Actions</th>
-                </tr>`;
-                table.appendChild(thead);
-                let tbody = document.createElement('tbody');
-                devicesToRender.forEach(device => {
-                    let status = device.reservedByName // Updated from reservedByInitials
-                        ? `<span class="text-red-500 font-semibold">Reserved: ${device.reservedByName}</span>`
-                        : `<span class="text-green-500 font-semibold">Available</span>`;
-
-                    let actionsHtml = generateButtonHtml(device);
-                    if (currentUser.isLead) { // Only leads can edit devices
-                        actionsHtml += `<button data-device-id="${device.id}" class="edit-device-btn bg-neutral-500 hover:bg-neutral-600 text-white font-semibold px-2 py-1 rounded-lg text-xs ml-1">Edit</button>`;
-                    }
-
-                    let tr = document.createElement('tr');
-                    tr.className = "hover:bg-neutral-50 dark:hover:bg-neutral-700";
-                    tr.innerHTML = `
-                        <td class="px-2 py-1 text-neutral-content">${device.index !== undefined ? device.index : ''}</td>
-                        <td class="px-2 py-1 text-neutral-content">${device.name || ''}</td>
-                        <td class="px-2 py-1 text-neutral-content">${device.category || ''}</td>
-                        <td class="px-2 py-1 text-neutral-content">${device.imei || ''}</td>
-                        <td class="px-2 py-1 text-neutral-content table-cell-truncate" title="${device.notes || ''}">${device.notes || ''}</td>
-                        <td class="px-2 py-1">${status}</td>
-                        <td class="px-2 py-1 flex gap-1">${actionsHtml}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-                table.appendChild(tbody);
-                deviceContainer.appendChild(table);
-            } else { // Card view
-                devicesToRender.forEach(device => {
-                    const deviceCard = document.createElement('div');
-                    deviceCard.className = `device-card p-6 rounded-xl shadow-lg flex flex-col justify-between${compactMode ? ' compact' : ''}`;
-                    deviceCard.style.cursor = compactMode ? 'pointer' : 'default';
-
-                    let notesHtml = device.notes && device.notes.trim() ? `<p class="text-sm text-neutral-content mb-2"><strong>Notes:</strong> ${device.notes}</p>` : '<p class="text-sm text-neutral-muted mb-2">No notes.</p>';
-                    let reservationStatusHtml = '';
-                    if (device.reservedByName) { // Updated from reservedByInitials
-                        const reservationDate = device.reservationDate?.toDate ? device.reservationDate.toDate().toLocaleDateString() : (device.reservationDate && device.reservationDate.seconds ? new Date(device.reservationDate.seconds * 1000).toLocaleDateString() : 'N/A');
-                        reservationStatusHtml = `<p class="text-sm font-semibold text-red-500">Reserved by: ${device.reservedByName}</p><p class="text-xs text-red-400">On: ${reservationDate}</p>`;
-                    } else {
-                        reservationStatusHtml = `<p class="text-sm font-semibold text-green-500">Available</p>`;
-                    }
-
-                    const mainActionBtnHtml = generateButtonHtml(device);
-                    let actionButtonsHtml = '';
-
-                    if (!compactMode) {
-                        actionButtonsHtml = mainActionBtnHtml;
-                        if (currentUser.isLead) { // Only leads can edit
-                            actionButtonsHtml += `<button data-device-id="${device.id}" class="edit-device-btn w-full bg-neutral-500 hover:bg-neutral-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out mt-2">Edit</button>`;
+                        let actionsHtml = generateButtonHtml(device);
+                        if (currentUser.isLead) { 
+                            actionsHtml += `<button data-device-id="${device.id}" class="edit-device-btn-trigger bg-neutral-500 hover:bg-neutral-600 text-white font-semibold px-2 py-1 rounded-lg text-xs ml-1">Edit</button>`;
                         }
-                    } else {
-                        let compactActionsContent = mainActionBtnHtml;
-                        if (currentUser.isLead) { // Only leads can edit
-                            compactActionsContent += `<button data-device-id="${device.id}" class="edit-device-btn w-full bg-neutral-500 hover:bg-neutral-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out mt-2">Edit</button>`;
-                        }
-                        actionButtonsHtml = `<div class="compact-actions hidden">${compactActionsContent}</div>`;
-                    }
 
-                    deviceCard.innerHTML = `
-                        <div>
-                            <div class="flex items-center mb-1">
-                                <span class="text-xs font-bold text-accent dark:text-accent-dark bg-neutral-100 dark:bg-neutral-700 rounded px-2 py-0.5 mr-2">#${device.index !== undefined ? device.index : 'N/A'}</span>
-                                <h3 class="text-xl font-semibold text-primary mb-0">${device.name || 'N/A'}</h3>
-                            </div>
-                            <p class="text-xs text-neutral-muted uppercase tracking-wider mb-2">${device.category || 'Uncategorized'}</p>
-                            <p class="text-sm text-neutral-content mb-1"><strong class="font-medium">IMEI:</strong> ${device.imei || 'N/A'}</p>
-                            ${notesHtml}
-                            ${reservationStatusHtml}
-                        </div>
-                        <div class="mt-4 flex flex-col gap-2">
-                            ${actionButtonsHtml}
-                        </div>`;
-                    deviceContainer.appendChild(deviceCard);
-
-                    if (compactMode) {
-                        deviceCard.addEventListener('click', function (e) {
-                            if (e.target.closest('button')) return; // Don't toggle if a button inside was clicked
-                            const actions = deviceCard.querySelector('.compact-actions');
-                            if (actions) actions.classList.toggle('hidden');
-                        });
-                    }
-                });
+                        let tr = document.createElement('tr');
+                        tr.className = "hover:bg-neutral-50 dark:hover:bg-neutral-700";
+                        tr.innerHTML = `
+                            <td class="px-2 py-1 text-neutral-content">${device.index !== undefined ? device.index : ''}</td>
+                            <td class="px-2 py-1 text-neutral-content">${device.name || ''}</td>
+                            <td class="px-2 py-1 text-neutral-content">${device.category || ''}</td>
+                            <td class="px-2 py-1 text-neutral-content">${device.location || ''}</td>
+                            <td class="px-2 py-1 text-neutral-content">${device.imei || ''}</td>
+                            <td class="px-2 py-1 text-neutral-content table-cell-truncate" title="${device.notes || ''}">${device.notes || ''}</td>
+                            <td class="px-2 py-1">${status}</td>
+                            <td class="px-2 py-1 flex gap-1">${actionsHtml}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                    table.appendChild(tbody);
+                    deviceContainer.appendChild(table);
+                } else { // Card view for other devices
+                    const otherDevicesGrid = document.createElement('div');
+                    otherDevicesGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6';
+                    devicesToRender.forEach(device => renderSingleDeviceCard(device, otherDevicesGrid, false));
+                    deviceContainer.appendChild(otherDevicesGrid);
+                }
             }
+
 
             // Attach event listeners
             document.querySelectorAll('.reserve-btn').forEach(button => button.addEventListener('click', (e) => { e.stopPropagation(); openReservationModal(button.dataset.deviceId); }));
             document.querySelectorAll('.release-btn').forEach(button => button.addEventListener('click', (e) => { e.stopPropagation(); releaseDevice(button.dataset.deviceId); }));
             if (currentUser.isLead) {
-                document.querySelectorAll('.edit-device-btn').forEach(button => button.addEventListener('click', (e) => { e.stopPropagation(); openEditDeviceModal(button.dataset.deviceId); }));
+                document.querySelectorAll('.edit-device-btn-trigger').forEach(button => button.addEventListener('click', (e) => { 
+                    e.stopPropagation(); 
+                    openDeviceManagementModal('edit', button.dataset.deviceId); 
+                }));
             }
         }
 
+
         function generateButtonHtml(device) {
-            // All team members can reserve/release.
-            if (!currentUser.isTeamMember) { // Not a team member
-                 if (!currentUser.uid) { // Not signed in at all
+            // ... (same as before)
+            if (!currentUser.isTeamMember) { 
+                 if (!currentUser.uid) { 
                     return `<button class="w-full bg-neutral-300 dark:bg-neutral-600 text-neutral-500 dark:text-neutral-400 font-semibold py-2 px-4 rounded-lg cursor-not-allowed" disabled>Sign in to Reserve</button>`;
-                } else { // Signed in, but not a team member
+                } else { 
                      return `<button class="w-full bg-neutral-300 dark:bg-neutral-600 text-neutral-500 dark:text-neutral-400 font-semibold py-2 px-4 rounded-lg cursor-not-allowed" disabled>Team Only to Reserve</button>`;
                 }
             }
 
-            // Is a team member
-            if (device.reservedByName) { // Device is reserved
-                 // ANY team member can release if they are a team member
+            if (device.reservedByName) { 
                 return `<button data-device-id="${device.id}" class="release-btn w-full bg-accent hover:bg-yellow-600 dark:bg-accent-dark dark:hover:bg-yellow-500 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out">Release</button>`;
-            } else { // Device is available
+            } else { 
                 return `<button data-device-id="${device.id}" class="reserve-btn w-full bg-primary hover:bg-blue-700 dark:bg-primary-dark dark:hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out">Reserve</button>`;
             }
         }
         
-        function getUniqueCategories() {
+        function getUniqueCategories() { /* ... (same as before) ... */ 
             const categories = [...new Set(allDevices.map(d => d.category || 'Uncategorized'))].sort();
             return categories;
         }
-
-        function populateCategoryDropdown() {
+        function populateCategoryDropdown() { /* ... (same as before) ... */ 
             if (!sortCategorySelect) return;
             const categories = getUniqueCategories();
             sortCategorySelect.innerHTML = `<option value="">All Categories</option>${categories.map(cat => `<option value="${cat}">${cat}</option>`).join('')}`;
@@ -608,42 +673,62 @@
         function filterAndRenderDevices() {
             if (!deviceContainer) return;
             const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
-            let filteredDevices = allDevices.filter(device => {
-                if (searchTerm.startsWith('#')) {
-                    const idx = searchTerm.slice(1).trim();
-                    return device.index !== undefined && String(device.index).includes(idx);
+            
+            let devicesForCurrentUser = [];
+            let otherFilteredDevices = [];
+
+            allDevices.forEach(device => {
+                // Check if reserved by current user
+                if (device.reservedByUserId === currentUser.uid) {
+                    devicesForCurrentUser.push(device);
                 }
-                return (
-                    (device.name?.toLowerCase().includes(searchTerm) ||
-                    device.category?.toLowerCase().includes(searchTerm) ||
-                    device.imei?.toLowerCase().includes(searchTerm) ||
-                    device.notes?.toLowerCase().includes(searchTerm))
-                );
+
+                // Apply search and category filters for the main list
+                const matchesSearch = searchTerm.startsWith('#')
+                    ? (device.index !== undefined && String(device.index).includes(searchTerm.slice(1).trim()))
+                    : (
+                        (device.name?.toLowerCase().includes(searchTerm) ||
+                        device.category?.toLowerCase().includes(searchTerm) ||
+                        device.imei?.toLowerCase().includes(searchTerm) ||
+                        device.location?.toLowerCase().includes(searchTerm) || // Added location to search
+                        device.notes?.toLowerCase().includes(searchTerm))
+                    );
+                
+                const matchesCategory = currentCategoryFilter ? (device.category || 'Uncategorized') === currentCategoryFilter : true;
+
+                if (matchesSearch && matchesCategory) {
+                    // Add to 'otherFilteredDevices' only if not already in 'devicesForCurrentUser'
+                    // to avoid duplication if a reserved device also matches filters.
+                    // However, the "You've Reserved" section should be distinct.
+                    // So, we will filter `otherFilteredDevices` to exclude those reserved by current user.
+                    if (device.reservedByUserId !== currentUser.uid) {
+                         otherFilteredDevices.push(device);
+                    }
+                }
             });
-            if (currentCategoryFilter) {
-                filteredDevices = filteredDevices.filter(d => (d.category || 'Uncategorized') === currentCategoryFilter);
-            }
-            renderDevices(filteredDevices);
+            
+            renderDevices(otherFilteredDevices, devicesForCurrentUser);
         }
 
-        function toggleCompactMode() {
+
+        function toggleCompactMode() { /* ... (same as before) ... */ 
             if(veryCompactMode) return; 
             compactMode = !compactMode;
             if (compactToggleButton) compactToggleButton.textContent = compactMode ? "Expand Actions" : "Compact View";
             filterAndRenderDevices();
         }
-
-        function toggleVeryCompactMode() {
+        function toggleVeryCompactMode() { /* ... (same as before) ... */ 
             veryCompactMode = !veryCompactMode;
             if (veryCompactToggleButton) veryCompactToggleButton.textContent = veryCompactMode ? "Card View" : "List View";
-            if (veryCompactMode) { // If switching to list view, ensure compact mode is also on (actions hidden by default)
+            if (veryCompactMode) { 
                 compactMode = true; 
                 if (compactToggleButton) compactToggleButton.textContent = "Expand Actions";
             }
-            updateUIAccess(); // This also calls filterAndRenderDevices
+            updateUIAccess(); 
         }
 
         async function removeDevice(deviceId) {
+            // ... (same as before)
             if (!currentUser.isLead) { showMessage("Permission denied. Only Team Leads can remove devices.", true); return false; }
             if (!deviceId || !currentUser.uid) { showMessage("Error: Missing device ID or user information.", true); return false; }
 
@@ -653,15 +738,15 @@
             try {
                 await deleteDoc(doc(db, devicesCollectionPath, deviceId));
                 showMessage("Device removed successfully!");
-                return true; // Indicate success
+                return true; 
             } catch (error) {
                 console.error("Error removing device: ", error);
                 showMessage(`Error removing device: ${error.message}`, true);
-                return false; // Indicate failure
+                return false; 
             }
         }
 
-        async function processDeviceReservation(deviceId, userNameToReserveWith) {
+        async function processDeviceReservation(deviceId, userNameToReserveWith) { /* ... (same as before) ... */ 
              if (!currentUser.isTeamMember || !currentUser.uid || !userNameToReserveWith || !deviceId) {
                 showMessage("Error: Missing information for reservation.", true);
                 const buttonToUpdate = document.querySelector(`.reserve-btn[data-device-id="${deviceId}"]`);
@@ -674,7 +759,7 @@
         
             try {
                 await updateDoc(doc(db, devicesCollectionPath, deviceId), {
-                    reservedByName: userNameToReserveWith, // Updated from reservedByInitials
+                    reservedByName: userNameToReserveWith, 
                     reservedByUserId: currentUser.uid,
                     reservationDate: Timestamp.now()
                 });
@@ -687,30 +772,25 @@
                 return false;
             }
         }
-
-        function openReservationModal(deviceId) {
+        function openReservationModal(deviceId) { /* ... (same as before) ... */ 
             if (!currentUser.isTeamMember) { showMessage("Only team members can reserve devices.", true); return; }
             if (!currentUser.uid) { showMessage("You must be signed in to reserve a device.", true); return; }
 
             if (currentUser.name && currentUser.name !== 'N/A' && currentUser.name !== 'Guest') { 
-                // User has a name set, proceed with direct reservation using their current name
                 console.log(`Attempting direct reservation for device ${deviceId} with name ${currentUser.name}`);
                 processDeviceReservation(deviceId, currentUser.name);
             } else { 
-                // User does not have a name, or it's a placeholder. Prompt for name.
                 if (deviceIdToReserveInput) deviceIdToReserveInput.value = deviceId;
                 if (nameInputForReservation) {
-                    nameInputForReservation.value = ''; // Clear previous input
+                    nameInputForReservation.value = ''; 
                     nameInputForReservation.placeholder = "Your Full Name";
                 }
                 if (reservationModal) reservationModal.classList.add('active');
                 if (nameInputForReservation) nameInputForReservation.focus();
             }
         }
-
-        function closeReservationModal() { if (reservationModal) reservationModal.classList.remove('active'); }
-
-        async function confirmReservation() { // Called when reserving via modal (user needed to input name)
+        function closeReservationModal() { /* ... (same as before) ... */ if (reservationModal) reservationModal.classList.remove('active'); }
+        async function confirmReservation() { /* ... (same as before) ... */ 
             if (!currentUser.isTeamMember) { showMessage("Only team members can reserve devices.", true, true); closeReservationModal(); return; }
             if (!deviceIdToReserveInput || !nameInputForReservation || !confirmReservationButton) return;
 
@@ -718,7 +798,6 @@
             const nameToReserve = nameInputForReservation.value.trim();
 
             if (!nameToReserve) { showMessage("Please enter your name.", true, true); return; }
-            // No more length check for name
             if (!deviceId || !currentUser.uid) { showMessage("Error: Missing device ID or user information.", true, true); closeReservationModal(); return; }
 
             confirmReservationButton.disabled = true; confirmReservationButton.textContent = 'Reserving...';
@@ -726,12 +805,11 @@
             const reservationSuccess = await processDeviceReservation(deviceId, nameToReserve);
 
             if (reservationSuccess) {
-                 // If user's name was 'N/A', 'Guest', or empty, and they provided a new one, update their profile.
                 if (!currentUser.name || currentUser.name === 'N/A' || currentUser.name === 'Guest') {
                     try {
                         const userDocRef = doc(db, teamMembersCollectionPath, currentUser.uid);
                         await setDoc(userDocRef, { name: nameToReserve }, { merge: true });
-                        currentUser.name = nameToReserve; // Update local cache
+                        currentUser.name = nameToReserve; 
                         if (userIdDisplay) userIdDisplay.textContent = `User ID: ${currentUser.uid} (${currentUser.name} - ${currentUser.role || 'No Role'})`;
                         console.log(`Name for user ${currentUser.uid} updated to: ${nameToReserve}.`);
                     } catch (nameError) {
@@ -741,12 +819,9 @@
                 }
                 closeReservationModal();
             }
-            // processDeviceReservation handles button state reset on failure.
-            // On success, modal closes.
             confirmReservationButton.disabled = false; confirmReservationButton.textContent = 'Confirm Reservation';
         }
-
-        async function releaseDevice(deviceId, isDirectAction = false) {
+        async function releaseDevice(deviceId, isDirectAction = false) { /* ... (same as before) ... */ 
             if (!currentUser.isTeamMember) { 
                 showMessage("Only team members can release devices.", true, isDirectAction); 
                 return; 
@@ -758,7 +833,6 @@
             
             try {
                 const deviceRef = doc(db, devicesCollectionPath, deviceId);
-                // Check if device exists before trying to update
                 const deviceSnap = await getDoc(deviceRef);
                 if (!deviceSnap.exists()) {
                     showMessage(`Device with ID ${deviceId} not found. Cannot release.`, true, isDirectAction);
@@ -766,7 +840,7 @@
                 }
 
                 await updateDoc(deviceRef, { 
-                    reservedByName: null, // Updated
+                    reservedByName: null, 
                     reservedByUserId: null, 
                     reservationDate: null 
                 });
@@ -777,143 +851,249 @@
             }
         }
 
-        // --- Add Device Modal ---
-        function openAddDeviceModal() {
-            if (!currentUser.isLead) { showMessage("Permission denied. Only Team Leads can add devices.", true); return; }
+        // --- Combined Device Management Modal Logic ---
+        function openDeviceManagementModal(view = 'add', deviceId = null) {
+            if (!currentUser.isLead) {
+                showMessage("Permission denied. Only Team Leads can manage devices.", true);
+                return;
+            }
+            if (!deviceManagementModal) return;
+
+            // Reset all views and forms
+            resetDeviceManagementForms();
+
+            if (view === 'add') {
+                showDeviceManagementView('add');
+            } else if (view === 'edit' && deviceId) {
+                const device = allDevices.find(d => d.id === deviceId);
+                if (!device) { showMessage("Device not found for editing.", true); return; }
+                populateEditDeviceForm(device);
+                showDeviceManagementView('edit');
+            } else if (view === 'bulk') {
+                showDeviceManagementView('bulk');
+            }
+            deviceManagementModal.classList.add('active');
+        }
+
+        function closeDeviceManagementModal() {
+            if (deviceManagementModal) deviceManagementModal.classList.remove('active');
+        }
+
+        function showDeviceManagementView(viewToShow) {
+            if (!addDeviceView || !editDeviceView || !bulkAddDevicesView || !deviceManagementTitle) return;
+
+            addDeviceView.style.display = 'none';
+            editDeviceView.style.display = 'none';
+            bulkAddDevicesView.style.display = 'none';
+
+            if (viewToShow === 'add') {
+                deviceManagementTitle.textContent = 'Add New Device';
+                addDeviceView.style.display = 'block';
+                if (newDeviceNameInput) newDeviceNameInput.focus();
+            } else if (viewToShow === 'edit') {
+                deviceManagementTitle.textContent = 'Edit Device';
+                editDeviceView.style.display = 'block';
+                if (editDeviceNameInput) editDeviceNameInput.focus();
+            } else if (viewToShow === 'bulk') {
+                deviceManagementTitle.textContent = 'Bulk Add Devices';
+                bulkAddDevicesView.style.display = 'block';
+                if (bulkDevicesTextarea) bulkDevicesTextarea.focus();
+            }
+        }
+        
+        function resetDeviceManagementForms() {
+            // Reset Add Device Form
             if (newDeviceNameInput) newDeviceNameInput.value = '';
             if (newDeviceCategoryInput) newDeviceCategoryInput.value = '';
             if (newDeviceIMEIInput) newDeviceIMEIInput.value = '';
             if (newDeviceIndexInput) newDeviceIndexInput.value = '';
+            if (newDeviceLocationInput) newDeviceLocationInput.value = ''; // New
             if (newDeviceNotesInput) newDeviceNotesInput.value = '';
-            if (addDeviceModal) addDeviceModal.classList.add('active');
-            if (newDeviceNameInput) newDeviceNameInput.focus();
-        }
-        function closeAddDeviceModal() { if (addDeviceModal) addDeviceModal.classList.remove('active'); }
-        async function confirmAddDevice() {
-            if (!currentUser.isLead) { showMessage("Permission denied.", true, true); closeAddDeviceModal(); return; }
-            const name = newDeviceNameInput.value.trim();
-            const category = newDeviceCategoryInput.value.trim();
-            const imei = newDeviceIMEIInput.value.trim();
-            const notes = newDeviceNotesInput.value.trim();
-            const index = newDeviceIndexInput.value.trim();
-            if (!name || name.length < 3 || !category || !index) { showMessage("Name (min 3 chars), category, and index are required.", true, true); return; }
-            if (isNaN(Number(index))) { showMessage("Index must be a number.", true, true); return; }
+            
+            // Reset Edit Device Form (though it's populated on open)
+            if (editDeviceNameInput) editDeviceNameInput.value = '';
+            if (editDeviceCategoryInput) editDeviceCategoryInput.value = '';
+            if (editDeviceIMEIInput) editDeviceIMEIInput.value = '';
+            if (editDeviceIndexInput) editDeviceIndexInput.value = '';
+            if (editDeviceLocationInput) editDeviceLocationInput.value = ''; // New
+            if (editDeviceNotesInput) editDeviceNotesInput.value = '';
+            if (editDeviceIdInput) editDeviceIdInput.value = '';
 
-            confirmAddDeviceButton.disabled = true; confirmAddDeviceButton.textContent = 'Adding...';
-            try {
-                await addDoc(devicesCol, {
-                    name, category, imei: imei || 'N/A', notes: notes || '', index: Number(index),
-                    reservedByName: null, reservedByUserId: null, reservationDate: null, // Updated
-                    addedByUserId: currentUser.uid, addedDate: Timestamp.now()
-                });
-                showMessage("Device added successfully!"); closeAddDeviceModal();
-            } catch (error) { console.error("Error adding device: ", error); showMessage(`Error adding device: ${error.message}`, true, true);
-            } finally { confirmAddDeviceButton.disabled = false; confirmAddDeviceButton.textContent = 'Add Device'; }
+            // Reset Bulk Add Form
+            if (bulkDevicesTextarea) bulkDevicesTextarea.value = '';
+            
+            // Clear any modal messages
+            const messageAreas = deviceManagementModal.querySelectorAll('.modal-message-area');
+            messageAreas.forEach(area => area.textContent = '');
         }
 
-        // --- Edit Device Modal ---
-        function openEditDeviceModal(deviceId) {
-            if (!currentUser.isLead) { showMessage("Permission denied. Only Team Leads can edit devices.", true); return; }
-            const device = allDevices.find(d => d.id === deviceId);
-            if (!device) { showMessage("Device not found.", true); return; }
+        function populateEditDeviceForm(device) {
             if (editDeviceIdInput) editDeviceIdInput.value = device.id;
             if (editDeviceNameInput) editDeviceNameInput.value = device.name || '';
             if (editDeviceCategoryInput) editDeviceCategoryInput.value = device.category || '';
             if (editDeviceIMEIInput) editDeviceIMEIInput.value = device.imei || '';
             if (editDeviceIndexInput) editDeviceIndexInput.value = device.index !== undefined ? device.index.toString() : '';
+            if (editDeviceLocationInput) editDeviceLocationInput.value = device.location || ''; // New
             if (editDeviceNotesInput) editDeviceNotesInput.value = device.notes || '';
-            if (editDeviceModal) editDeviceModal.classList.add('active');
-            if (editDeviceNameInput) editDeviceNameInput.focus();
         }
-        function closeEditDeviceModal() { if (editDeviceModal) editDeviceModal.classList.remove('active'); }
+
+        async function confirmAddDevice() {
+            if (!currentUser.isLead) { showMessage("Permission denied.", true, true); return; }
+            const name = newDeviceNameInput.value.trim();
+            const category = newDeviceCategoryInput.value.trim();
+            const imei = newDeviceIMEIInput.value.trim();
+            const index = newDeviceIndexInput.value.trim();
+            const location = newDeviceLocationInput.value.trim(); // New
+            const notes = newDeviceNotesInput.value.trim();
+
+            if (!name || name.length < 3 || !category || !index || !location) { // Added location to validation
+                showMessage("Name (min 3 chars), category, index, and location are required.", true, true); 
+                return; 
+            }
+            if (isNaN(Number(index))) { showMessage("Index must be a number.", true, true); return; }
+
+            confirmAddDeviceButton.disabled = true; confirmAddDeviceButton.textContent = 'Adding...';
+            try {
+                await addDoc(devicesCol, {
+                    name, category, imei: imei || 'N/A', index: Number(index), location, notes: notes || '',
+                    reservedByName: null, reservedByUserId: null, reservationDate: null, 
+                    addedByUserId: currentUser.uid, addedDate: Timestamp.now()
+                });
+                showMessage("Device added successfully!"); 
+                closeDeviceManagementModal();
+            } catch (error) { 
+                console.error("Error adding device: ", error); 
+                showMessage(`Error adding device: ${error.message}`, true, true);
+            } finally { 
+                confirmAddDeviceButton.disabled = false; confirmAddDeviceButton.textContent = 'Add Device'; 
+            }
+        }
+
         async function confirmEditDevice() {
-            if (!currentUser.isLead) { showMessage("Permission denied.", true, true); closeEditDeviceModal(); return; }
+            if (!currentUser.isLead) { showMessage("Permission denied.", true, true); return; }
             const deviceId = editDeviceIdInput.value;
             const name = editDeviceNameInput.value.trim();
             const category = editDeviceCategoryInput.value.trim();
             const imei = editDeviceIMEIInput.value.trim();
-            const notes = editDeviceNotesInput.value.trim();
             const index = editDeviceIndexInput.value.trim();
-            if (!name || name.length < 3 || !category || !index) { showMessage("Name (min 3 chars), category, and index are required.", true, true); return; }
+            const location = editDeviceLocationInput.value.trim(); // New
+            const notes = editDeviceNotesInput.value.trim();
+
+            if (!name || name.length < 3 || !category || !index || !location) { // Added location to validation
+                showMessage("Name (min 3 chars), category, index, and location are required.", true, true); 
+                return; 
+            }
             if (isNaN(Number(index))) { showMessage("Index must be a number.", true, true); return; }
 
             confirmEditDeviceButton.disabled = true; confirmEditDeviceButton.textContent = 'Saving...';
             try {
-                await updateDoc(doc(db, devicesCollectionPath, deviceId), { name, category, imei: imei || 'N/A', notes: notes || '', index: Number(index) });
-                showMessage("Device updated successfully!"); closeEditDeviceModal();
-            } catch (error) { console.error("Error updating device: ", error); showMessage(`Error updating device: ${error.message}`, true, true);
-            } finally { confirmEditDeviceButton.disabled = false; confirmEditDeviceButton.textContent = 'Save Changes'; }
+                await updateDoc(doc(db, devicesCollectionPath, deviceId), { 
+                    name, category, imei: imei || 'N/A', index: Number(index), location, notes: notes || '' 
+                });
+                showMessage("Device updated successfully!"); 
+                closeDeviceManagementModal();
+            } catch (error) { 
+                console.error("Error updating device: ", error); 
+                showMessage(`Error updating device: ${error.message}`, true, true);
+            } finally { 
+                confirmEditDeviceButton.disabled = false; confirmEditDeviceButton.textContent = 'Save Changes'; 
+            }
         }
-        
-        // --- User Settings & Management ---
+
+        async function confirmBulkAddDevices() {
+            if (!currentUser.isLead) { showMessage("Permission denied.", true, true); return; }
+            const text = bulkDevicesTextarea.value.trim();
+            if (!text) { showMessage("Paste device data first (CSV: name,category,imei,index,location,notes).", true, true); return; } // Updated placeholder info
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+            if (lines.length === 0) { showMessage("No valid lines found.", true, true); return; }
+            
+            let added = 0, failed = 0;
+            confirmBulkAddDevicesButton.disabled = true; confirmBulkAddDevicesButton.textContent = `Adding ${lines.length} devices...`;
+            
+            for (const line of lines) {
+                let [name, category, imei, index, location, notes] = line.split(',').map(s => s.trim()); // Added location
+                if (!name || name.length < 3 || !category || !index || isNaN(Number(index)) || !location) { // Added location to validation
+                    failed++; 
+                    console.warn("Skipping invalid line (missing required fields or invalid index/location):", line); 
+                    continue; 
+                }
+                try {
+                    await addDoc(devicesCol, {
+                        name, category, imei: imei || 'N/A', index: Number(index), location, notes: notes || '',
+                        reservedByName: null, reservedByUserId: null, reservationDate: null, 
+                        addedByUserId: currentUser.uid, addedDate: Timestamp.now()
+                    });
+                    added++;
+                } catch (e) { 
+                    failed++; 
+                    console.error("Failed to add device from bulk:", line, e); 
+                }
+            }
+            showMessage(`Bulk add complete. Added: ${added}, Failed: ${failed}. Check console for details on failures.`, failed > 0, true);
+            if (added > 0) closeDeviceManagementModal(); // Close only if some were added, otherwise user might want to correct input
+            confirmBulkAddDevicesButton.disabled = false; confirmBulkAddDevicesButton.textContent = 'Add Devices';
+        }
+
+
+        // --- User Settings & Management (Combined Modal) ---
         function openUserManagementModal() {
-            showManageUsersView();
+            // Default to manage users view
+            showUserManagementView('manage');
             fetchAllTeamMembers(); // Ensure list is up-to-date
             if (userManagementModal) userManagementModal.classList.add('active');
         }
 
         function closeUserManagementModal() {
             if (userManagementModal) userManagementModal.classList.remove('active');
-            // Reset to manage view when closing
-            showManageUsersView();
         }
+        
+        function showUserManagementView(viewToShow, userToEdit = null) {
+            if (!manageUsersView || !addUserView || !editUserView) return;
 
-        function showManageUsersView() {
-            document.getElementById('manageUsersView').style.display = 'block';
-            document.getElementById('addUserView').style.display = 'none';
-            document.getElementById('editUserView').style.display = 'none';
-        }
+            manageUsersView.style.display = 'none';
+            addUserView.style.display = 'none';
+            editUserView.style.display = 'none';
 
-        function showAddUserView() {
-            if (!currentUser.isLead) { showMessage("Only Team Leads can add new users.", true); return; }
-            
-            // Clear form fields
-            if (newMemberUidInput) newMemberUidInput.value = '';
-            if (newMemberNameInput) newMemberNameInput.value = '';
-            if (newMemberRoleSelect) newMemberRoleSelect.value = ROLES.ESD_MEMBER; // Default role
-            
-            document.getElementById('manageUsersView').style.display = 'none';
-            document.getElementById('addUserView').style.display = 'block';
-            document.getElementById('editUserView').style.display = 'none';
-            
-            // Focus on first input
-            if (newMemberUidInput) newMemberUidInput.focus();
-        }
+            const messageAreas = userManagementModal.querySelectorAll('.modal-message-area');
+            messageAreas.forEach(area => area.textContent = '');
 
-        // Only allow editing own name for regular members
-        function showEditUserView(user, isSelfEdit = false) {
-            if (!user || !user.uid) { showMessage("User data missing.", true); return; }
-            if (!currentUser.isLead && !isSelfEdit) { showMessage("Permission denied.", true); return; }
+            if (viewToShow === 'manage') {
+                manageUsersView.style.display = 'block';
+                fetchAllTeamMembers(); // Refresh list when returning to manage view
+            } else if (viewToShow === 'add') {
+                if (!currentUser.isLead) { showMessage("Only Team Leads can add new users.", true); showUserManagementView('manage'); return; }
+                if (newMemberUidInput) newMemberUidInput.value = '';
+                if (newMemberNameInput) newMemberNameInput.value = '';
+                if (newMemberRoleSelect) newMemberRoleSelect.value = ROLES.ESD_MEMBER;
+                addUserView.style.display = 'block';
+                if (newMemberUidInput) newMemberUidInput.focus();
+            } else if (viewToShow === 'edit' && userToEdit) {
+                const isSelfEdit = userToEdit.uid === currentUser.uid;
+                if (!currentUser.isLead && !isSelfEdit) { showMessage("Permission denied.", true); showUserManagementView('manage'); return; }
 
-            // Populate form fields
-            if (editUserIdInput) editUserIdInput.value = user.uid;
-            if (editUserNameInput) editUserNameInput.value = user.name || '';
-            if (editUserRoleSelect) {
-                editUserRoleSelect.value = user.role || ROLES.ESD_MEMBER;
-                editUserRoleSelect.disabled = !currentUser.isLead; // Only leads can change role
-            }
-            if (removeUserButtonInEditModal) {
-                removeUserButtonInEditModal.style.display = (currentUser.isLead && user.uid !== currentUser.uid) ? 'inline-block' : 'none';
-                removeUserButtonInEditModal.dataset.uidToRemove = user.uid;
-            }
-            
-            // Update title
-            const editTitle = document.getElementById('editUserTitle');
-            if (editTitle) editTitle.textContent = isSelfEdit ? "Edit Your Profile" : "Edit Team Member";
-            
-            document.getElementById('manageUsersView').style.display = 'none';
-            document.getElementById('addUserView').style.display = 'none';
-            document.getElementById('editUserView').style.display = 'block';
-
-            // For regular members, disable role select and hide remove button
-            if (!currentUser.isLead && isSelfEdit) {
-                if (editUserRoleSelect) editUserRoleSelect.disabled = true;
-                if (removeUserButtonInEditModal) removeUserButtonInEditModal.style.display = 'none';
+                if (editUserIdInput) editUserIdInput.value = userToEdit.uid;
+                if (editUserNameInput) editUserNameInput.value = userToEdit.name || '';
+                if (editUserRoleSelect) {
+                    editUserRoleSelect.value = userToEdit.role || ROLES.ESD_MEMBER;
+                    editUserRoleSelect.disabled = !currentUser.isLead; 
+                }
+                if (removeUserButtonInEditModal) {
+                    removeUserButtonInEditModal.style.display = (currentUser.isLead && userToEdit.uid !== currentUser.uid) ? 'inline-block' : 'none';
+                    removeUserButtonInEditModal.dataset.uidToRemove = userToEdit.uid;
+                }
+                if (editUserTitle) editUserTitle.textContent = isSelfEdit ? "Edit Your Profile" : "Edit Team Member";
+                
+                editUserView.style.display = 'block';
+                if (editUserNameInput) editUserNameInput.focus();
+                
+                if (!currentUser.isLead && isSelfEdit) {
+                    if (editUserRoleSelect) editUserRoleSelect.disabled = true;
+                    if (removeUserButtonInEditModal) removeUserButtonInEditModal.style.display = 'none';
+                }
             }
         }
 
-        // Add User Functions
-        async function confirmAddUser() {
+        async function confirmAddUser() { /* ... (same as before, but use showUserManagementView('manage')) ... */ 
             if (!currentUser.isLead) { showMessage("Permission denied.", true, true); return; }
             
             const newUid = newMemberUidInput.value.trim();
@@ -949,8 +1129,7 @@
                 });
                 
                 showMessage(`User ${newName} (${newUid}) added to the team as ${newRole}. They may need to refresh.`, false, true);
-                fetchAllTeamMembers(); // Refresh the list
-                showManageUsersView(); // Go back to manage view
+                showUserManagementView('manage'); 
                 
             } catch (error) {
                 console.error("Error adding team member: ", error);
@@ -960,9 +1139,7 @@
                 confirmAddUserButton.textContent = 'Add User';
             }
         }
-
-        // Edit User Functions
-        async function confirmEditUser() {
+        async function confirmEditUser() { /* ... (same as before, but use showUserManagementView('manage')) ... */ 
             const userIdToEdit = editUserIdInput.value;
             const newName = editUserNameInput.value.trim();
             const newRole = editUserRoleSelect.value;
@@ -980,22 +1157,21 @@
             
             try {
                 const dataToUpdate = { name: newName };
-                if (currentUser.isLead) { // Only leads can update role
+                if (currentUser.isLead) { 
                     dataToUpdate.role = newRole;
                 }
                 
                 await updateDoc(doc(db, teamMembersCollectionPath, userIdToEdit), dataToUpdate);
                 showMessage("User details updated successfully!", false, true);
                 
-                if (isSelfEdit) { // If current user updated their own details
+                if (isSelfEdit) { 
                     currentUser.name = newName;
                     if (currentUser.isLead) currentUser.role = newRole;
                     currentUser.isLead = LEAD_ROLES.includes(currentUser.role);
                     if (userIdDisplay) userIdDisplay.textContent = `User ID: ${currentUser.uid} (${currentUser.name} - ${currentUser.role || 'No Role'})`;
                 }
                 
-                if (currentUser.isLead) fetchAllTeamMembers(); // Refresh list for leads
-                showManageUsersView(); // Go back to manage view
+                showUserManagementView('manage');
                 
             } catch (error) {
                 console.error("Error updating user: ", error);
@@ -1005,8 +1181,7 @@
                 confirmEditUserButton.textContent = 'Save Changes';
             }
         }
-
-        async function removeUserFromTeam(userIdToRemove) {
+        async function removeUserFromTeam(userIdToRemove) { /* ... (same as before, but use showUserManagementView('manage')) ... */ 
             if (!currentUser.isLead || !userIdToRemove) { showMessage("Permission denied or user ID missing.", true, true); return; }
             if (userIdToRemove === currentUser.uid) { showMessage("You cannot remove yourself.", true, true); return; }
 
@@ -1016,16 +1191,13 @@
             try {
                 await deleteDoc(doc(db, teamMembersCollectionPath, userIdToRemove));
                 showMessage(`User ${userIdToRemove} removed successfully.`, false, true);
-                fetchAllTeamMembers(); // Refresh user list
-                showManageUsersView(); // Go back to manage view
+                showUserManagementView('manage'); 
             } catch (error) {
                 console.error("Error removing user:", error);
                 showMessage(`Error removing user: ${error.message}`, true, true);
             }
         }
-
-        // Fetch and Render Functions
-        async function fetchAllTeamMembers() {
+        async function fetchAllTeamMembers() { /* ... (same as before) ... */ 
             try {
                 const snapshot = await getDocs(teamMembersCol);
                 allTeamMembers = snapshot.docs.map(d => ({ uid: d.id, ...d.data() }));
@@ -1035,78 +1207,38 @@
                 showMessage("Could not load team members list.", true);
             }
         }
-
-        function renderUsersTable() {
+        function renderUsersTable() { /* ... (same as before, but uses showUserManagementView('edit', user)) ... */ 
             if (!usersTableBody) return;
             usersTableBody.innerHTML = '';
 
             allTeamMembers.forEach(member => {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-neutral-50 dark:hover:bg-neutral-700";
-                // Only leads see all edit buttons, regular members only see edit for themselves
                 let showEdit = currentUser.isLead || member.uid === currentUser.uid;
                 tr.innerHTML = `
                     <td class="px-3 py-2 text-neutral-content table-cell-truncate" title="${member.uid}">${member.uid}</td>
                     <td class="px-3 py-2 text-neutral-content">${member.name || 'N/A'}</td>
                     <td class="px-3 py-2 text-neutral-content">${member.role || 'N/A'}</td>
                     <td class="px-3 py-2 text-center">
-                        ${showEdit ? `<button data-uid="${member.uid}" class="edit-user-btn text-sm bg-primary hover:bg-blue-700 text-white font-semibold px-3 py-1 rounded-lg">Edit</button>` : ''}
+                        ${showEdit ? `<button data-uid="${member.uid}" class="edit-user-btn-trigger text-sm bg-primary hover:bg-blue-700 text-white font-semibold px-3 py-1 rounded-lg">Edit</button>` : ''}
                     </td>
                 `;
                 usersTableBody.appendChild(tr);
             });
 
-            // Add event listeners to edit buttons
-            document.querySelectorAll('.edit-user-btn').forEach(btn => {
+            document.querySelectorAll('.edit-user-btn-trigger').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const userToEdit = allTeamMembers.find(m => m.uid === btn.dataset.uid);
-                    const isSelfEdit = userToEdit && userToEdit.uid === currentUser.uid;
-                    showEditUserView(userToEdit, isSelfEdit);
+                    showUserManagementView('edit', userToEdit);
                 });
             });
 
-            // Hide "Add User" button for non-leads
-            const showAddUserViewBtn = document.getElementById('showAddUserViewBtn');
             if (showAddUserViewBtn) showAddUserViewBtn.style.display = currentUser.isLead ? 'inline-block' : 'none';
         }
 
-        // --- Bulk Add Devices ---
-        function openBulkAddDevicesModal() {
-            if (!currentUser.isLead) { showMessage("Permission denied. Only Team Leads can bulk add devices.", true); return; }
-            if (bulkDevicesTextarea) bulkDevicesTextarea.value = '';
-            if (bulkAddDevicesModal) bulkAddDevicesModal.classList.add('active');
-            if (bulkDevicesTextarea) bulkDevicesTextarea.focus();
-        }
-        function closeBulkAddDevicesModal() { if (bulkAddDevicesModal) bulkAddDevicesModal.classList.remove('active'); }
-        async function confirmBulkAddDevices() {
-            if (!currentUser.isLead) { showMessage("Permission denied.", true, true); closeBulkAddDevicesModal(); return; }
-            const text = bulkDevicesTextarea.value.trim();
-            if (!text) { showMessage("Paste device data first (CSV: name,category,imei,index,notes).", true, true); return; }
-            const lines = text.split('\n').map(l => l.trim()).filter(l => l);
-            if (lines.length === 0) { showMessage("No valid lines found.", true, true); return; }
-            let added = 0, failed = 0;
-            confirmBulkAddDevicesButton.disabled = true; confirmBulkAddDevicesButton.textContent = `Adding ${lines.length} devices...`;
-            for (const line of lines) {
-                let [name, category, imei, index, notes] = line.split(',').map(s => s.trim());
-                if (!name || name.length < 3 || !category || !index || isNaN(Number(index))) { failed++; console.warn("Skipping invalid line:", line); continue; }
-                try {
-                    await addDoc(devicesCol, {
-                        name, category, imei: imei || 'N/A', notes: notes || '', index: Number(index),
-                        reservedByName: null, reservedByUserId: null, reservationDate: null, // Updated
-                        addedByUserId: currentUser.uid, addedDate: Timestamp.now()
-                    });
-                    added++;
-                } catch (e) { failed++; console.error("Failed to add device from bulk:", line, e); }
-            }
-            showMessage(`Bulk add complete. Added: ${added}, Failed: ${failed}. Check console for details on failures.`, failed > 0, true);
-            closeBulkAddDevicesModal();
-            confirmBulkAddDevicesButton.disabled = false; confirmBulkAddDevicesButton.textContent = 'Add Devices';
-        }
-
-
         // --- Utility Functions (Messaging, Confirmation, Theme) ---
-        function showMessage(message, isError = false, inModal = false) {
-            const activeModal = document.querySelector('.modal.active:not(#messageModal):not(#confirmationModal)'); // Exclude global modals
+        function showMessage(message, isError = false, inModal = false) { /* ... (same as before) ... */ 
+            const activeModal = document.querySelector('.modal.active:not(#messageModal):not(#confirmationModal)'); 
             const modalMessageArea = activeModal?.querySelector('.modal-message-area');
 
             if (inModal && modalMessageArea) {
@@ -1119,10 +1251,9 @@
                 messageModal.classList.add('active');
             } else { console.log(`Message (isError: ${isError}): ${message}`); }
         }
-        function closeMessageModal() { if (messageModal) messageModal.classList.remove('active'); }
-
+        function closeMessageModal() { /* ... (same as before) ... */ if (messageModal) messageModal.classList.remove('active'); }
         let resolveConfirmation;
-        async function showConfirmationModal(message) {
+        async function showConfirmationModal(message) { /* ... (same as before) ... */ 
             if (!confirmationModal || !confirmationMessageText || !confirmActionButton || !cancelActionButton) {
                 console.warn("Confirmation modal elements not found. Defaulting to true (simulating confirm)."); return true;
             }
@@ -1130,27 +1261,23 @@
             confirmationModal.classList.add('active');
             return new Promise((resolve) => { resolveConfirmation = resolve; });
         }
-        
-        // Theme Toggle
-        function setTheme(isDark) {
+        function setTheme(isDark) { /* ... (same as before) ... */ 
             const html = document.documentElement;
             if (isDark) html.classList.add('dark'); else html.classList.remove('dark');
             if (themeToggleEmoji) themeToggleEmoji.textContent = isDark ? '🌙' : '☀️';
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
         }
-        function updateThemeFromStorageOrSystem() {
+        function updateThemeFromStorageOrSystem() { /* ... (same as before) ... */ 
             const stored = localStorage.getItem('theme');
             if (stored) setTheme(stored === 'dark');
             else setTheme(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
         }
-        
-        // Splash Screen
-        function setSplashBg() {
+        function setSplashBg() { /* ... (same as before) ... */ 
             const splash = document.getElementById('splash-overlay');
             if (!splash) return;
             splash.style.background = document.documentElement.classList.contains('dark') ? '#111827' : '#fff';
         }
-        function hideSplash() {
+        function hideSplash() { /* ... (same as before) ... */ 
             const splash = document.getElementById('splash-overlay');
             if (splash) {
                 splash.style.transition = 'opacity 0.25s cubic-bezier(.4,2,.6,1)';
@@ -1163,8 +1290,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             initializeDOMElements();
             updateThemeFromStorageOrSystem();
-            setSplashBg(); // Set initial splash BG based on theme
-            setTimeout(hideSplash, 750); // Hide splash after animations
+            setSplashBg(); 
+            setTimeout(hideSplash, 750); 
 
             // Search and Filter
             if (searchInput) searchInput.addEventListener('input', filterAndRenderDevices);
@@ -1177,56 +1304,56 @@
                 const isDark = !document.documentElement.classList.contains('dark');
                 if (themeToggleEmoji) { themeToggleEmoji.classList.add('spin'); setTimeout(() => themeToggleEmoji.classList.remove('spin'), 350); }
                 setTheme(isDark);
-                setSplashBg(); // Update splash if it were still visible (it won't be, but good practice)
+                setSplashBg(); 
             });
 
             // Reservation Modal
             if (confirmReservationButton) confirmReservationButton.addEventListener('click', confirmReservation);
             if (cancelReservationButton) cancelReservationButton.addEventListener('click', closeReservationModal);
             
-            // Add Device Modal
-            if (addDeviceButton) addDeviceButton.addEventListener('click', openAddDeviceModal);
+            // --- Combined Device Management Modal Event Listeners ---
+            if (openDeviceManagementButton) {
+                openDeviceManagementButton.addEventListener('click', () => openDeviceManagementModal('add')); // Default to 'add' view
+            }
+            // Buttons to switch views within Device Management Modal
+            const switchToAddDeviceBtn = document.getElementById('switchToAddDeviceBtn');
+            const switchToBulkAddBtn = document.getElementById('switchToBulkAddBtn');
+            if (switchToAddDeviceBtn) switchToAddDeviceBtn.addEventListener('click', () => showDeviceManagementView('add'));
+            if (switchToBulkAddBtn) switchToBulkAddBtn.addEventListener('click', () => showDeviceManagementView('bulk'));
+
+
+            // Add Device View (within combined modal)
             if (confirmAddDeviceButton) confirmAddDeviceButton.addEventListener('click', confirmAddDevice);
-            if (cancelAddDeviceButton) cancelAddDeviceButton.addEventListener('click', closeAddDeviceModal);
-            
-            // Edit Device Modal
+            if (backToDeviceManageFromAddBtn) backToDeviceManageFromAddBtn.addEventListener('click', closeDeviceManagementModal); // Or showDeviceManagementView('list') if you add a list view
+
+            // Edit Device View (within combined modal)
             if (confirmEditDeviceButton) confirmEditDeviceButton.addEventListener('click', confirmEditDevice);
-            if (cancelEditDeviceButton) cancelEditDeviceButton.addEventListener('click', closeEditDeviceModal);
+            if (backToDeviceManageFromEditBtn) backToDeviceManageFromEditBtn.addEventListener('click', closeDeviceManagementModal);
             if (removeDeviceFromEditModalButton) {
                 removeDeviceFromEditModalButton.addEventListener('click', async () => {
                     const deviceId = editDeviceIdInput.value;
                     if (deviceId) {
-                        const success = await removeDevice(deviceId); // removeDevice already has confirmation
-                        if (success) closeEditDeviceModal();
+                        const success = await removeDevice(deviceId); 
+                        if (success) closeDeviceManagementModal();
                     }
                 });
             }
             
-            // User Settings & Management Modals
-            // Navigation buttons
-            const showAddUserViewBtn = document.getElementById('showAddUserViewBtn');
-            const backToManageBtn = document.getElementById('backToManageBtn');
-            const backToManageFromEditBtn = document.getElementById('backToManageFromEditBtn');
+            // Bulk Add Devices View (within combined modal)
+            if (confirmBulkAddDevicesButton) confirmBulkAddDevicesButton.addEventListener('click', confirmBulkAddDevices);
+            if (backToDeviceManageFromBulkBtn) backToDeviceManageFromBulkBtn.addEventListener('click', closeDeviceManagementModal);
+
+
+            // --- User Settings & Management Modal Event Listeners ---
+            if (userSettingsButton) userSettingsButton.addEventListener('click', openUserManagementModal);
+            if (closeManageUsersButton) closeManageUsersButton.addEventListener('click', closeUserManagementModal);
+
+            // Navigation within User Management
+            if (showAddUserViewBtn) showAddUserViewBtn.addEventListener('click', () => showUserManagementView('add'));
+            if (backToUserManageFromAddBtn) backToUserManageFromAddBtn.addEventListener('click', () => showUserManagementView('manage'));
+            if (backToUserManageFromEditBtn) backToUserManageFromEditBtn.addEventListener('click', () => showUserManagementView('manage'));
             
-            // Action buttons
-            const closeUserManagementButton = document.getElementById('closeUserManagementButton');
-            const cancelAddUserButton = document.getElementById('cancelAddUserButton');
-            const confirmAddUserButton = document.getElementById('confirmAddUserButton');
-            const cancelEditUserButton = document.getElementById('cancelEditUserButton');
-            const confirmEditUserButton = document.getElementById('confirmEditUserButton');
-            const removeUserButtonInEditModal = document.getElementById('removeUserButtonInEditModal');
-            
-            // Navigation event listeners
-            if (showAddUserViewBtn) showAddUserViewBtn.addEventListener('click', showAddUserView);
-            if (backToManageBtn) backToManageBtn.addEventListener('click', showManageUsersView);
-            if (backToManageFromEditBtn) backToManageFromEditBtn.addEventListener('click', showManageUsersView);
-            
-            // Modal close/cancel listeners
-            if (closeUserManagementButton) closeUserManagementButton.addEventListener('click', closeUserManagementModal);
-            if (cancelAddUserButton) cancelAddUserButton.addEventListener('click', showManageUsersView);
-            if (cancelEditUserButton) cancelEditUserButton.addEventListener('click', showManageUsersView);
-            
-            // Action button listeners
+            // Actions within User Management
             if (confirmAddUserButton) confirmAddUserButton.addEventListener('click', confirmAddUser);
             if (confirmEditUserButton) confirmEditUserButton.addEventListener('click', confirmEditUser);
             if (removeUserButtonInEditModal) {
@@ -1236,23 +1363,11 @@
                 });
             }
 
-            if (userSettingsButton) {
-                userSettingsButton.addEventListener('click', () => {
-                    openUserManagementModal();
-                });
-            }
-
-            // Bulk Add
-            if (bulkAddDevicesButton) bulkAddDevicesButton.addEventListener('click', openBulkAddDevicesModal);
-            if (confirmBulkAddDevicesButton) confirmBulkAddDevicesButton.addEventListener('click', confirmBulkAddDevices);
-            if (cancelBulkAddDevicesButton) cancelBulkAddDevicesButton.addEventListener('click', closeBulkAddDevicesModal);
-
             // Global Modals
             if (closeMessageButton) closeMessageButton.addEventListener('click', closeMessageModal);
             if (confirmActionButton) confirmActionButton.addEventListener('click', () => { if (confirmationModal) confirmationModal.classList.remove('active'); if (resolveConfirmation) resolveConfirmation(true); });
             if (cancelActionButton) cancelActionButton.addEventListener('click', () => { if (confirmationModal) confirmationModal.classList.remove('active'); if (resolveConfirmation) resolveConfirmation(false); });
 
-            // Initialize Auth (this will also trigger initial device load and URL action handling)
             if (Object.keys(firebaseConfig).length > 0 || Object.keys(hardcodedFirebaseConfig).length > 0) {
                 initializeAuth();
             } else {
@@ -1287,13 +1402,10 @@
         </div>
 
         <div class="mb-8 p-6 bg-white dark:bg-darkcard rounded-xl shadow-md flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-            <input type="text" id="searchInput" placeholder="Search by name, IMEI, category, notes, or #index..."
+            <input type="text" id="searchInput" placeholder="Search by name, IMEI, category, location, notes, or #index..."
                 class="flex-grow p-3 border border-neutral-300 dark:border-darkborder rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent transition-shadow">
-            <button id="addDeviceButton" style="display: none;" class="w-full md:w-auto bg-secondary hover:bg-emerald-600 dark:bg-secondary-dark dark:hover:bg-emerald-500 text-white font-semibold py-3 px-6 rounded-lg transition duration-150 ease-in-out shadow-md">
-                + Add New Device
-            </button>
-            <button id="bulkAddDevicesButton" style="display: none;" class="w-full md:w-auto bg-secondary hover:bg-emerald-700 dark:bg-secondary-dark dark:hover:bg-emerald-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-150 ease-in-out shadow-md ml-0 md:ml-2 mt-2 md:mt-0">
-                Bulk Add Devices
+            <button id="openDeviceManagementButton" style="display: none;" class="w-full md:w-auto bg-secondary hover:bg-emerald-600 dark:bg-secondary-dark dark:hover:bg-emerald-500 text-white font-semibold py-3 px-6 rounded-lg transition duration-150 ease-in-out shadow-md">
+                Manage Devices
             </button>
         </div>
 
@@ -1305,8 +1417,7 @@
             <p class="ml-3 text-neutral-muted">Loading devices...</p>
         </div>
 
-        <div id="deviceContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            </div>
+        <div id="deviceContainer" class="space-y-8"> </div>
     </div>
 
     <div id="reservationModal" class="modal fixed inset-0 bg-black bg-opacity-75 items-center justify-center p-4 z-50">
@@ -1325,41 +1436,63 @@
         </div>
     </div>
 
-    <div id="addDeviceModal" class="modal fixed inset-0 bg-black bg-opacity-75 items-center justify-center p-4 z-50 overflow-y-auto">
-        <div class="p-8 rounded-xl shadow-2xl w-full max-w-lg transform transition-all my-8">
-            <h2 class="text-2xl font-semibold text-secondary dark:text-secondary-dark mb-6">Add New Device</h2>
-            <div class="space-y-4">
-                <div><label for="newDeviceName" class="block text-sm font-medium text-neutral-content mb-1">Device Name <span class="text-danger">*</span></label><input type="text" id="newDeviceName" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-secondary dark:focus:ring-secondary-dark focus:border-transparent" placeholder="e.g., FMC920"></div>
-                <div><label for="newDeviceCategory" class="block text-sm font-medium text-neutral-content mb-1">Category <span class="text-danger">*</span></label><input type="text" id="newDeviceCategory" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-secondary dark:focus:ring-secondary-dark focus:border-transparent" placeholder="e.g., FMx9 Devices"></div>
-                <div><label for="newDeviceIMEI" class="block text-sm font-medium text-neutral-content mb-1">IMEI</label><input type="text" id="newDeviceIMEI" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-secondary dark:focus:ring-secondary-dark focus:border-transparent" placeholder="e.g., 123456789012345"></div>
-                <div><label for="newDeviceIndex" class="block text-sm font-medium text-neutral-content mb-1">Index <span class="text-danger">*</span></label><input type="number" id="newDeviceIndex" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-secondary dark:focus:ring-secondary-dark focus:border-transparent" placeholder="e.g., 1" min="0" step="1" required></div>
-                <div><label for="newDeviceNotes" class="block text-sm font-medium text-neutral-content mb-1">Notes</label><textarea id="newDeviceNotes" rows="3" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-secondary dark:focus:ring-secondary-dark focus:border-transparent" placeholder="Additional notes..."></textarea></div>
+    <div id="deviceManagementModal" class="modal fixed inset-0 bg-black bg-opacity-75 items-center justify-center p-4 z-60 overflow-y-auto">
+        <div class="p-8 rounded-xl shadow-2xl w-full max-w-xl transform transition-all my-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 id="deviceManagementTitle" class="text-2xl font-semibold text-secondary dark:text-secondary-dark">Manage Devices</h2>
+                <div class="space-x-2">
+                     <button id="switchToAddDeviceBtn" class="text-sm button-neutral py-1 px-3 rounded-md">Add New</button>
+                     <button id="switchToBulkAddBtn" class="text-sm button-neutral py-1 px-3 rounded-md">Bulk Add</button>
+                </div>
             </div>
-            <div class="modal-message-area text-sm mt-4 mb-3 text-center"></div>
-            <div class="flex justify-end space-x-4 mt-6">
-                <button id="cancelAddDeviceButton" class="px-6 py-2 button-neutral rounded-lg font-medium transition">Cancel</button>
-                <button id="confirmAddDeviceButton" class="px-6 py-2 bg-secondary hover:bg-emerald-600 dark:bg-secondary-dark dark:hover:bg-emerald-500 text-white rounded-lg font-semibold transition">Add Device</button>
-            </div>
-        </div>
-    </div>
 
-    <div id="editDeviceModal" class="modal fixed inset-0 bg-black bg-opacity-75 items-center justify-center p-4 z-50 overflow-y-auto">
-        <div class="p-8 rounded-xl shadow-2xl w-full max-w-lg transform transition-all my-8">
-            <h2 class="text-2xl font-semibold text-neutral-700 dark:text-neutral-200 mb-6">Edit Device</h2>
-            <input type="hidden" id="editDeviceId">
-            <div class="space-y-4">
-                <div><label for="editDeviceName" class="block text-sm font-medium text-neutral-content mb-1">Device Name <span class="text-danger">*</span></label><input type="text" id="editDeviceName" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent"></div>
-                <div><label for="editDeviceCategory" class="block text-sm font-medium text-neutral-content mb-1">Category <span class="text-danger">*</span></label><input type="text" id="editDeviceCategory" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent"></div>
-                <div><label for="editDeviceIMEI" class="block text-sm font-medium text-neutral-content mb-1">IMEI</label><input type="text" id="editDeviceIMEI" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent"></div>
-                <div><label for="editDeviceIndex" class="block text-sm font-medium text-neutral-content mb-1">Index <span class="text-danger">*</span></label><input type="number" id="editDeviceIndex" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent" min="0" step="1" required></div>
-                <div><label for="editDeviceNotes" class="block text-sm font-medium text-neutral-content mb-1">Notes</label><textarea id="editDeviceNotes" rows="3" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent"></textarea></div>
+            <div id="addDeviceView" style="display: none;">
+                <div class="space-y-4">
+                    <div><label for="newDeviceName" class="block text-sm font-medium text-neutral-content mb-1">Device Name <span class="text-danger">*</span></label><input type="text" id="newDeviceName" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-secondary dark:focus:ring-secondary-dark focus:border-transparent" placeholder="e.g., FMC920"></div>
+                    <div><label for="newDeviceCategory" class="block text-sm font-medium text-neutral-content mb-1">Category <span class="text-danger">*</span></label><input type="text" id="newDeviceCategory" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-secondary dark:focus:ring-secondary-dark focus:border-transparent" placeholder="e.g., FMx9 Devices"></div>
+                    <div><label for="newDeviceIMEI" class="block text-sm font-medium text-neutral-content mb-1">IMEI</label><input type="text" id="newDeviceIMEI" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-secondary dark:focus:ring-secondary-dark focus:border-transparent" placeholder="e.g., 123456789012345"></div>
+                    <div><label for="newDeviceIndex" class="block text-sm font-medium text-neutral-content mb-1">Index <span class="text-danger">*</span></label><input type="number" id="newDeviceIndex" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-secondary dark:focus:ring-secondary-dark focus:border-transparent" placeholder="e.g., 1" min="0" step="1" required></div>
+                    <div><label for="newDeviceLocation" class="block text-sm font-medium text-neutral-content mb-1">Location <span class="text-danger">*</span></label><input type="text" id="newDeviceLocation" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-secondary dark:focus:ring-secondary-dark focus:border-transparent" placeholder="e.g., Link Office"></div>
+                    <div><label for="newDeviceNotes" class="block text-sm font-medium text-neutral-content mb-1">Notes</label><textarea id="newDeviceNotes" rows="3" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-secondary dark:focus:ring-secondary-dark focus:border-transparent" placeholder="Additional notes..."></textarea></div>
+                </div>
+                <div class="modal-message-area text-sm mt-4 mb-3 text-center"></div>
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button id="backToDeviceManageFromAddBtn" class="px-6 py-2 button-neutral rounded-lg font-medium transition">Cancel</button>
+                    <button id="confirmAddDeviceButton" class="px-6 py-2 bg-secondary hover:bg-emerald-600 dark:bg-secondary-dark dark:hover:bg-emerald-500 text-white rounded-lg font-semibold transition">Add Device</button>
+                </div>
             </div>
-            <div class="modal-message-area text-sm mt-4 mb-3 text-center"></div>
-            <div class="flex justify-between items-center mt-6">
-                <button id="removeDeviceFromEditModalButton" class="px-6 py-2 bg-danger hover:bg-red-700 text-white rounded-lg font-semibold transition">Remove Device</button>
-                <div>
-                    <button id="cancelEditDeviceButton" class="px-6 py-2 button-neutral rounded-lg font-medium transition mr-2">Cancel</button>
-                    <button id="confirmEditDeviceButton" class="px-6 py-2 bg-primary hover:bg-blue-700 dark:bg-primary-dark dark:hover:bg-blue-600 text-white rounded-lg font-semibold transition">Save Changes</button>
+
+            <div id="editDeviceView" style="display: none;">
+                <input type="hidden" id="editDeviceId">
+                <div class="space-y-4">
+                    <div><label for="editDeviceName" class="block text-sm font-medium text-neutral-content mb-1">Device Name <span class="text-danger">*</span></label><input type="text" id="editDeviceName" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent"></div>
+                    <div><label for="editDeviceCategory" class="block text-sm font-medium text-neutral-content mb-1">Category <span class="text-danger">*</span></label><input type="text" id="editDeviceCategory" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent"></div>
+                    <div><label for="editDeviceIMEI" class="block text-sm font-medium text-neutral-content mb-1">IMEI</label><input type="text" id="editDeviceIMEI" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent"></div>
+                    <div><label for="editDeviceIndex" class="block text-sm font-medium text-neutral-content mb-1">Index <span class="text-danger">*</span></label><input type="number" id="editDeviceIndex" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent" min="0" step="1" required></div>
+                    <div><label for="editDeviceLocation" class="block text-sm font-medium text-neutral-content mb-1">Location <span class="text-danger">*</span></label><input type="text" id="editDeviceLocation" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent"></div>
+                    <div><label for="editDeviceNotes" class="block text-sm font-medium text-neutral-content mb-1">Notes</label><textarea id="editDeviceNotes" rows="3" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark focus:border-transparent"></textarea></div>
+                </div>
+                <div class="modal-message-area text-sm mt-4 mb-3 text-center"></div>
+                <div class="flex justify-between items-center mt-6">
+                    <button id="removeDeviceFromEditModalButton" class="px-6 py-2 bg-danger hover:bg-red-700 text-white rounded-lg font-semibold transition">Remove Device</button>
+                    <div>
+                        <button id="backToDeviceManageFromEditBtn" class="px-6 py-2 button-neutral rounded-lg font-medium transition mr-2">Cancel</button>
+                        <button id="confirmEditDeviceButton" class="px-6 py-2 bg-primary hover:bg-blue-700 dark:bg-primary-dark dark:hover:bg-blue-600 text-white rounded-lg font-semibold transition">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bulkAddDevicesView" style="display: none;">
+                 <div class="mb-4">
+                    <label for="bulkDevicesTextarea" class="block text-sm font-medium text-neutral-content mb-1">
+                        Paste devices (CSV: name,category,imei,index,location,notes; one per line):
+                    </label>
+                    <textarea id="bulkDevicesTextarea" rows="8" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-secondary dark:focus:ring-secondary-dark focus:border-transparent" placeholder="e.g.&#10;FMC920,FMx9 Devices,123456789012345,1,Link Office,Test device&#10;FMB003,Bluetooth,N/A,2,Baltic Hearts Office,Asset tracker"></textarea>
+                </div>
+                <div class="modal-message-area text-sm mb-3 text-center"></div>
+                <div class="flex justify-end space-x-4">
+                    <button id="backToDeviceManageFromBulkBtn" class="px-6 py-2 button-neutral rounded-lg font-medium transition">Cancel</button>
+                    <button id="confirmBulkAddDevicesButton" class="px-6 py-2 bg-secondary hover:bg-emerald-700 dark:bg-secondary-dark dark:hover:bg-emerald-600 text-white rounded-lg font-semibold transition">Add Devices</button>
                 </div>
             </div>
         </div>
@@ -1368,7 +1501,6 @@
     <div id="userManagementModal" class="modal fixed inset-0 bg-black bg-opacity-75 items-center justify-center p-4 z-60 overflow-y-auto">
         <div class="p-8 rounded-xl shadow-2xl w-full max-w-2xl transform transition-all my-8">
             
-            <!-- Manage Users View -->
             <div id="manageUsersView">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-semibold text-accent dark:text-accent-dark">Manage Team Users</h2>
@@ -1396,100 +1528,58 @@
                 </div>
             </div>
 
-            <!-- Add User View -->
-            <div id="addUserView" style="display: none;">
+            <div id="addUserViewContent" style="display: none;">
                 <div class="flex items-center mb-6">
-                    <button id="backToManageBtn" class="mr-4 p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition">
+                    <button id="backToUserManageFromAddBtn" class="mr-4 p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                         </svg>
                     </button>
                     <h2 class="text-2xl font-semibold text-accent dark:text-accent-dark">Add New User</h2>
                 </div>
-                
                 <div class="mb-4">
-                    <label for="newMemberUid" class="block text-sm font-medium text-neutral-content mb-1">
-                        New User's UID (Firebase Auth ID): <span class="text-danger">*</span>
-                    </label>
+                    <label for="newMemberUid" class="block text-sm font-medium text-neutral-content mb-1">New User's UID (Firebase Auth ID): <span class="text-danger">*</span></label>
                     <input type="text" id="newMemberUid" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-accent dark:focus:ring-accent-dark focus:border-transparent" placeholder="Enter Firebase User ID">
                 </div>
-                
                 <div class="mb-4">
-                    <label for="newMemberName" class="block text-sm font-medium text-neutral-content mb-1">
-                        Full Name: <span class="text-danger">*</span>
-                    </label>
+                    <label for="newMemberName" class="block text-sm font-medium text-neutral-content mb-1">Full Name: <span class="text-danger">*</span></label>
                     <input type="text" id="newMemberName" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-accent dark:focus:ring-accent-dark focus:border-transparent" placeholder="e.g., Jane Doe">
                 </div>
-                
                 <div class="mb-6">
-                    <label for="newMemberRoleSelect" class="block text-sm font-medium text-neutral-content mb-1">
-                        Role: <span class="text-danger">*</span>
-                    </label>
-                    <select id="newMemberRoleSelect" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-accent dark:focus:ring-accent-dark focus:border-transparent bg-white dark:bg-neutral-700 text-neutral-800 dark:text-neutral-100">
-                    </select>
+                    <label for="newMemberRoleSelect" class="block text-sm font-medium text-neutral-content mb-1">Role: <span class="text-danger">*</span></label>
+                    <select id="newMemberRoleSelect" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-accent dark:focus:ring-accent-dark focus:border-transparent bg-white dark:bg-neutral-700 text-neutral-800 dark:text-neutral-100"></select>
                 </div>
-                
                 <div class="modal-message-area text-sm mb-3 text-center"></div>
-                
                 <div class="flex justify-end space-x-4">
-                    <button id="cancelAddUserButton" class="px-6 py-2 button-neutral rounded-lg font-medium transition">Cancel</button>
                     <button id="confirmAddUserButton" class="px-6 py-2 bg-accent hover:bg-yellow-600 dark:bg-accent-dark dark:hover:bg-yellow-500 text-white rounded-lg font-semibold transition">Add User</button>
                 </div>
             </div>
 
-            <!-- Edit User View -->
-            <div id="editUserView" style="display: none;">
+            <div id="editUserViewContent" style="display: none;">
                 <div class="flex items-center mb-6">
-                    <button id="backToManageFromEditBtn" class="mr-4 p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition">
+                    <button id="backToUserManageFromEditBtn" class="mr-4 p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                         </svg>
                     </button>
                     <h2 id="editUserTitle" class="text-2xl font-semibold text-accent dark:text-accent-dark">Edit User</h2>
                 </div>
-                
                 <input type="hidden" id="editUserId">
-                
                 <div class="mb-4">
-                    <label for="editUserName" class="block text-sm font-medium text-neutral-content mb-1">
-                        Full Name: <span class="text-danger">*</span>
-                    </label>
+                    <label for="editUserName" class="block text-sm font-medium text-neutral-content mb-1">Full Name: <span class="text-danger">*</span></label>
                     <input type="text" id="editUserName" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-accent dark:focus:ring-accent-dark focus:border-transparent">
                 </div>
-                
                 <div class="mb-6">
-                    <label for="editUserRoleSelect" class="block text-sm font-medium text-neutral-content mb-1">
-                        Role: <span class="text-danger">*</span>
-                    </label>
-                    <select id="editUserRoleSelect" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-accent dark:focus:ring-accent-dark focus:border-transparent bg-white dark:bg-neutral-700 text-neutral-800 dark:text-neutral-100">
-                    </select>
+                    <label for="editUserRoleSelect" class="block text-sm font-medium text-neutral-content mb-1">Role: <span class="text-danger">*</span></label>
+                    <select id="editUserRoleSelect" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-accent dark:focus:ring-accent-dark focus:border-transparent bg-white dark:bg-neutral-700 text-neutral-800 dark:text-neutral-100"></select>
                 </div>
-                
                 <div class="modal-message-area text-sm mb-3 text-center"></div>
-                
                 <div class="flex justify-between items-center mt-6">
                     <button id="removeUserButtonInEditModal" style="display:none;" class="px-6 py-2 bg-danger hover:bg-red-700 text-white rounded-lg font-semibold transition">Remove User</button>
                     <div>
-                        <button id="cancelEditUserButton" class="px-6 py-2 button-neutral rounded-lg font-medium transition mr-2">Cancel</button>
                         <button id="confirmEditUserButton" class="px-6 py-2 bg-accent hover:bg-yellow-600 dark:bg-accent-dark dark:hover:bg-yellow-500 text-white rounded-lg font-semibold transition">Save Changes</button>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-    <div id="bulkAddDevicesModal" class="modal fixed inset-0 bg-black bg-opacity-75 items-center justify-center p-4 z-50">
-        <div class="p-8 rounded-xl shadow-2xl w-full max-w-lg transform transition-all">
-            <h2 class="text-2xl font-semibold text-secondary dark:text-secondary-dark mb-6">Bulk Add Devices</h2>
-            <div class="mb-4">
-                <label for="bulkDevicesTextarea" class="block text-sm font-medium text-neutral-content mb-1">
-                    Paste devices (CSV: name,category,imei,index,notes; one per line):
-                </label>
-                <textarea id="bulkDevicesTextarea" rows="8" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-secondary dark:focus:ring-secondary-dark focus:border-transparent" placeholder="e.g.&#10;FMC920,FMx9 Devices,123456789012345,1,Test device&#10;FMB003,Bluetooth,N/A,2,Asset tracker"></textarea>
-            </div>
-            <div class="modal-message-area text-sm mb-3 text-center"></div>
-            <div class="flex justify-end space-x-4">
-                <button id="cancelBulkAddDevicesButton" class="px-6 py-2 button-neutral rounded-lg font-medium transition">Cancel</button>
-                <button id="confirmBulkAddDevicesButton" class="px-6 py-2 bg-secondary hover:bg-emerald-700 dark:bg-secondary-dark dark:hover:bg-emerald-600 text-white rounded-lg font-semibold transition">Add Devices</button>
             </div>
         </div>
     </div>
