@@ -1045,16 +1045,164 @@ function showUserManagementView(viewToShow, userToEdit = null) {
     }
 }
 
-/** Handles the confirmation of adding a new user. */
-async function confirmAddUser() { /* ... unchanged ... */ }
-/** Handles the confirmation of editing a user. */
-async function confirmEditUser() { /* ... unchanged ... */ }
-/** Removes a user from the team. */
-async function removeUserFromTeam(userIdToRemove) { /* ... unchanged ... */ }
-/** Fetches all team members from Firestore. */
-async function fetchAllTeamMembers() { /* ... unchanged ... */ }
-/** Renders the list of users in the management table. */
-function renderUsersTable() { /* ... unchanged ... */ }
+       async function confirmAddUser() { /* ... (same as before, but use showUserManagementView('manage')) ... */ 
+            if (!currentUser.isLead) { showMessage("Permission denied.", true, true); return; }
+            
+            const newUid = newMemberUidInput.value.trim();
+            const newName = newMemberNameInput.value.trim();
+            const newRole = newMemberRoleSelect.value;
+
+            if (!newUid) { showMessage("Please enter the User ID of the new team member.", true, true); return; }
+            if (newUid.length < 20 || !/^[a-zA-Z0-9]+$/.test(newUid)) { 
+                showMessage("Invalid User ID format. It should be an alphanumeric string (typically 28 chars).", true, true); 
+                return;
+            }
+            if (!newName) { showMessage("Please enter the name for the new team member.", true, true); return; }
+            if (!newRole || !Object.values(ROLES).includes(newRole)) { showMessage("Please select a valid role.", true, true); return; }
+
+            confirmAddUserButton.disabled = true; 
+            confirmAddUserButton.textContent = 'Adding...';
+            
+            try {
+                const teamMemberRef = doc(db, teamMembersCollectionPath, newUid);
+                const memberSnap = await getDoc(teamMemberRef);
+                if (memberSnap.exists()) {
+                    showMessage(`User ${newUid} already exists in the team. You can edit them from the user list.`, true, true);
+                    confirmAddUserButton.disabled = false; 
+                    confirmAddUserButton.textContent = 'Add User';
+                    return;
+                }
+
+                await setDoc(teamMemberRef, {
+                    addedBy: currentUser.uid,
+                    addedAt: Timestamp.now(),
+                    name: newName, 
+                    role: newRole
+                });
+                
+                showMessage(`User ${newName} (${newUid}) added to the team as ${newRole}. They may need to refresh.`, false, true);
+                showUserManagementView('manage'); 
+                
+            } catch (error) {
+                console.error("Error adding team member: ", error);
+                showMessage(`Error adding team member: ${error.message}`, true, true);
+            } finally {
+                confirmAddUserButton.disabled = false; 
+                confirmAddUserButton.textContent = 'Add User';
+            }
+        }
+        async function confirmEditUser() { /* ... (same as before, but use showUserManagementView('manage')) ... */ 
+            const userIdToEdit = editUserIdInput.value;
+            const newName = editUserNameInput.value.trim();
+            const newRole = editUserRoleSelect.value;
+            const isSelfEdit = userIdToEdit === currentUser.uid;
+
+            if (!userIdToEdit) { showMessage("User ID missing.", true, true); return; }
+            if (!newName) { showMessage("Name cannot be empty.", true, true); return; }
+            if (!currentUser.isLead && !isSelfEdit) { showMessage("Permission denied.", true, true); return; }
+            if (currentUser.isLead && (!newRole || !Object.values(ROLES).includes(newRole))) {
+                showMessage("Please select a valid role.", true, true); return; 
+            }
+
+            confirmEditUserButton.disabled = true;
+            confirmEditUserButton.textContent = 'Saving...';
+            
+            try {
+                const dataToUpdate = { name: newName };
+                if (currentUser.isLead) { 
+                    dataToUpdate.role = newRole;
+                }
+                
+                await updateDoc(doc(db, teamMembersCollectionPath, userIdToEdit), dataToUpdate);
+                showMessage("User details updated successfully!", false, true);
+                
+                if (isSelfEdit) { 
+                    currentUser.name = newName;
+                    if (currentUser.isLead) currentUser.role = newRole;
+                    currentUser.isLead = LEAD_ROLES.includes(currentUser.role);
+                    if (userIdDisplay) userIdDisplay.textContent = `User ID: ${currentUser.uid} (${currentUser.name} - ${currentUser.role || 'No Role'})`;
+                }
+                
+                showUserManagementView('manage');
+                
+            } catch (error) {
+                console.error("Error updating user: ", error);
+                showMessage(`Error updating user: ${error.message}`, true, true);
+            } finally {
+                confirmEditUserButton.disabled = false; 
+                confirmEditUserButton.textContent = 'Save Changes';
+            }
+        }
+        async function removeUserFromTeam(userIdToRemove) { /* ... (same as before, but use showUserManagementView('manage')) ... */ 
+            if (!currentUser.isLead || !userIdToRemove) { showMessage("Permission denied or user ID missing.", true, true); return; }
+            if (userIdToRemove === currentUser.uid) { showMessage("You cannot remove yourself.", true, true); return; }
+
+            const confirmed = await showConfirmationModal(`Are you sure you want to remove user ${userIdToRemove} from the team? This action cannot be undone.`);
+            if (!confirmed) return;
+
+            try {
+                await deleteDoc(doc(db, teamMembersCollectionPath, userIdToRemove));
+                showMessage(`User ${userIdToRemove} removed successfully.`, false, true);
+                showUserManagementView('manage'); 
+            } catch (error) {
+                console.error("Error removing user:", error);
+                showMessage(`Error removing user: ${error.message}`, true, true);
+            }
+        }
+        async function fetchAllTeamMembers() { /* ... (same as before) ... */ 
+            try {
+                const snapshot = await getDocs(teamMembersCol);
+                allTeamMembers = snapshot.docs.map(d => ({ uid: d.id, ...d.data() }));
+                renderUsersTable();
+            } catch (error) {
+                console.error("Error fetching team members:", error);
+                showMessage("Could not load team members list.", true);
+            }
+        }
+        function renderUsersTable() {
+          /* ... (same as before, but uses showUserManagementView('edit', user)) ... */
+          if (!usersTableBody) return;
+          usersTableBody.innerHTML = "";
+
+          allTeamMembers.forEach((member) => {
+            const tr = document.createElement("tr");
+            tr.className = "hover:bg-neutral-50 dark:hover:bg-neutral-700";
+            let showEdit = currentUser.isLead || member.uid === currentUser.uid;
+            tr.innerHTML = `
+                    <td class="px-3 py-2 text-neutral-content table-cell-truncate" title="${
+                      member.uid
+                    }">${member.uid}</td>
+                    <td class="px-3 py-2 text-neutral-content">${
+                      member.name || "N/A"
+                    }</td>
+                    <td class="px-3 py-2 text-neutral-content">${
+                      member.role || "N/A"
+                    }</td>
+                    <td class="px-3 py-2 text-center">
+                        ${
+                          showEdit
+                            ? `<button data-uid="${member.uid}" class="edit-user-btn-trigger text-sm bg-primary hover:bg-blue-700 text-white font-semibold px-3 py-1 rounded-lg">Edit</button>`
+                            : ""
+                        }
+                    </td>
+                `;
+            usersTableBody.appendChild(tr);
+          });
+
+          document.querySelectorAll(".edit-user-btn-trigger").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const userToEdit = allTeamMembers.find(
+                (m) => m.uid === btn.dataset.uid
+              );
+              showUserManagementView("edit", userToEdit);
+            });
+          });
+
+          if (showAddUserViewBtn)
+            showAddUserViewBtn.style.display = currentUser.isLead
+              ? "inline-block"
+              : "none";
+        }
 
 
 // --- Utility Functions (Messaging, Confirmation, Theme) ---
