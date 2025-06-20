@@ -1,0 +1,214 @@
+/* Custom Styles for the Device Inventory App */
+
+/* Base body styles from the Inter font */
+body { 
+    font-family: 'Inter', sans-serif; 
+}
+
+/* Modal base styles */
+.modal { 
+    display: none; 
+}
+.modal.active { 
+    display: flex; 
+}
+
+/* Custom scrollbar styling */
+::-webkit-scrollbar { 
+    width: 8px; 
+}
+::-webkit-scrollbar-track { 
+    background: #E5E7EB; 
+    border-radius: 0.5rem; 
+}
+html.dark ::-webkit-scrollbar-track { 
+    background: #374151; 
+}
+::-webkit-scrollbar-thumb { 
+    background: #9CA3AF; 
+    border-radius: 0.5rem; 
+}
+html.dark ::-webkit-scrollbar-thumb { 
+    background: #6B7280; 
+}
+::-webkit-scrollbar-thumb:hover { 
+    background: #6B7280; 
+}
+html.dark ::-webkit-scrollbar-thumb:hover { 
+    background: #9CA3AF; 
+}
+
+/* Device card styling and hover effects */
+.device-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    background: #fff; 
+    border: 1px solid #E5E7EB;
+}
+html.dark .device-card { 
+    background: #1F2937; 
+    border-color: #374151; 
+}
+.device-card:hover { 
+    transform: translateY(-5px); 
+    box-shadow: 0 10px 25px 0 rgba(0,0,0,0.08); 
+}
+
+/* Specific styling for the device card when shown in the scanner modal */
+.scanned-device-card {
+    border: 2px solid #3B82F6; /* primary color */
+    box-shadow: 0 10px 25px 0 rgba(59, 130, 246, 0.2);
+}
+html.dark .scanned-device-card {
+    border-color: #2563EB; /* primary-dark color */
+}
+
+
+/* Compact mode styling for device cards */
+.device-card.compact { 
+    padding: 0.75rem 1rem; 
+    font-size: 0.95rem; 
+    min-height: unset; 
+}
+.device-card.compact h3 { 
+    font-size: 1rem; 
+    margin-bottom: 0.25rem; 
+}
+.device-card.compact p, .device-card.compact .text-xs, .device-card.compact .text-sm { 
+    margin-bottom: 0.15rem; 
+}
+.device-card.compact .mt-4 { 
+    margin-top: 0.5rem; 
+}
+.device-card.compact button { 
+    padding-top: 0.4rem; 
+    padding-bottom: 0.4rem; 
+    font-size: 0.95rem; 
+}
+
+/* Table styling for very compact list view */
+table.min-w-full th, table.min-w-full td { 
+    border-bottom: 1px solid #E5E7EB; 
+}
+html.dark table.min-w-full th, html.dark table.min-w-full td { 
+    border-bottom: 1px solid #374151; 
+}
+
+/* Modal content background */
+.modal > div { 
+    background: #fff; 
+}
+html.dark .modal > div { 
+    background: #1F2937; 
+}
+
+/* Form input, textarea, and select styling for both light and dark modes */
+input[type="text"], input[type="number"], input[type="email"], input[type="password"], textarea, select {
+    background: #fff; 
+    border-color: #D1D5DB; 
+    color: #111827;
+}
+input[type="text"]::placeholder, input[type="number"]::placeholder, textarea::placeholder { 
+    color: #6B7280; 
+}
+html.dark input[type="text"], html.dark input[type="number"], html.dark input[type="email"], html.dark input[type="password"], html.dark textarea, html.dark select {
+    background: #374151; 
+    border-color: #4B5563; 
+    color: #F3F4F6;
+}
+html.dark input[type="text"]::placeholder, html.dark input[type="number"]::placeholder, html.dark textarea::placeholder { 
+    color: #6B7280; 
+}
+
+/* Neutral button styling */
+.button-neutral { 
+    background: #E5E7EB; 
+    color: #374151; 
+}
+.button-neutral:hover { 
+    background: #D1D5DB; 
+}
+html.dark .button-neutral { 
+    background: #4B5563; 
+    color: #F3F4F6; 
+}
+html.dark .button-neutral:hover { 
+    background: #6B7280; 
+}
+
+/* Custom text colors for semantics */
+.text-primary { color: #3B82F6; } html.dark .text-primary { color: #2563EB; }
+.text-secondary { color: #10B981; } html.dark .text-secondary { color: #059669; }
+.text-accent { color: #F59E0B; } html.dark .text-accent { color: #D97706; }
+.text-danger { color: #EF4444; } html.dark .text-danger { color: #DC2626; }
+.text-neutral-content { color: #374151; } html.dark .text-neutral-content { color: #D1D5DB; }
+.text-neutral-muted { color: #6B7280; } html.dark .text-neutral-muted { color: #9CA3AF; }
+
+/* Header and Modal titles */
+.header-title { color: #3B82F6; } html.dark .header-title { color: #2563EB; }
+.modal-title { color: #3B82F6; } html.dark .modal-title { color: #2563EB; }
+
+/* Theme toggle button animation */
+.theme-toggle-emoji { 
+    transition: transform 0.3s cubic-bezier(.4,2,.6,1), filter 0.3s cubic-bezier(.4,2,.6,1); 
+    display: inline-block; 
+}
+.theme-toggle-emoji.spin { 
+    transform: rotate(180deg) scale(1.2); 
+    filter: brightness(1.2); 
+}
+
+/* Splash screen animations */
+.splash-container { 
+    display: flex; 
+    align-items: center; 
+    gap: 20px; 
+}
+@keyframes fadeIn { 
+    to { opacity: 1; } 
+}
+@keyframes slideIn { 
+    to { transform: translateX(0); opacity: 1; } 
+}
+.teltonika { 
+    opacity: 0; 
+    animation: fadeIn 0.3s forwards; 
+}
+.telematics { 
+    transform: translateX(-100%); 
+    opacity: 0; 
+    animation: slideIn 0.3s forwards 0.3s; 
+}
+
+/* Table cell truncation for long text */
+.table-cell-truncate { 
+    max-width: 150px; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+}
+@media (max-width: 640px) { 
+    .table-cell-truncate { 
+        max-width: 100px; 
+    } 
+}
+
+/* Styling for the section titles (e.g., "All Devices", "You've Reserved") */
+.section-title {
+    font-size: 1.5rem; /* 24px */
+    font-weight: 600; /* semibold */
+    margin-bottom: 1rem; /* 16px */
+    padding-bottom: 0.5rem; /* 8px */
+    border-bottom: 2px solid #3B82F6; /* primary color */
+    color: #3B82F6; /* primary color */
+}
+html.dark .section-title {
+    border-bottom-color: #2563EB; /* primary-dark color */
+    color: #2563EB; /* primary-dark color */
+}
+
+/* QR Code Reader styling */
+#qr-reader video {
+    width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+}
